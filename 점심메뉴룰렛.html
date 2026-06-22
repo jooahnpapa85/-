@@ -631,6 +631,16 @@
     }
   }
 
+  function resetMap() {
+    // 위치가 바뀌면 지도를 완전히 리셋해서 새 위치로 재초기화
+    if (leafletMap) {
+      leafletMap.remove();
+      leafletMap = null;
+    }
+    markers = [];
+    document.getElementById('mapCard').classList.remove('visible');
+  }
+
   function getGPS() {
     if (!navigator.geolocation) { alert('이 브라우저는 GPS를 지원하지 않아요.'); return; }
     const btn = document.querySelector('.loc-btn.primary');
@@ -644,7 +654,8 @@
         btn.textContent = '🛰️ GPS로 자동 설정';
         btn.disabled = false;
         updateLocationUI();
-        if (leafletMap) { leafletMap.setView([userLocation.lat, userLocation.lng], 15); }
+        resetMap();
+        alert(`✅ "${label}" 위치로 저장됐어요!\n다시 메뉴를 뽑으면 이 위치 기준으로 지도가 표시됩니다.`);
       },
       () => {
         alert('위치를 가져오지 못했어요.\n브라우저 위치 권한을 허용해주세요.');
@@ -655,8 +666,7 @@
   }
 
   function toggleManual() {
-    const form = document.getElementById('manualForm');
-    form.classList.toggle('open');
+    document.getElementById('manualForm').classList.toggle('open');
   }
 
   function saveManualLocation() {
@@ -668,7 +678,8 @@
     localStorage.setItem('userLocation', JSON.stringify(userLocation));
     document.getElementById('manualForm').classList.remove('open');
     updateLocationUI();
-    if (leafletMap) { leafletMap.setView([lat, lng], 15); }
+    resetMap();
+    alert(`✅ "${label}" 위치로 저장됐어요!\n다시 메뉴를 뽑으면 이 위치 기준으로 지도가 표시됩니다.`);
   }
 
   function resetLocation() {
@@ -676,6 +687,7 @@
     userLocation = null;
     localStorage.removeItem('userLocation');
     updateLocationUI();
+    resetMap();
   }
 
   let currentCategory = "한식";
