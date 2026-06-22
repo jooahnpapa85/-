@@ -4,11 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>점심 메뉴 룰렛 🍽️</title>
-
-  <!-- Leaflet 지도 -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
+  <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=9284ebd12f81855d710ebbca3be4ec7e&libraries=services"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body { max-width: 100%; overflow-x: hidden; }
@@ -31,495 +27,241 @@
     }
 
     .bg-food {
-      position: fixed;
-      font-size: 2rem;
-      opacity: 0.07;
-      pointer-events: none;
-      animation: float linear infinite;
-      z-index: 0;
+      position: fixed; font-size: 2rem; opacity: 0.07;
+      pointer-events: none; animation: float linear infinite; z-index: 0;
     }
     @keyframes float {
       0%   { transform: translateY(110vh) rotate(0deg); opacity: 0; }
-      10%  { opacity: 0.07; }
-      90%  { opacity: 0.07; }
+      10%  { opacity: 0.07; } 90% { opacity: 0.07; }
       100% { transform: translateY(-10vh) rotate(360deg); opacity: 0; }
     }
     body > *:not(.bg-food) { position: relative; z-index: 1; }
 
-    h1 {
-      color: #fff8f0;
-      font-size: 2rem;
-      margin-bottom: 6px;
-      text-shadow: 0 2px 16px rgba(255,100,0,0.5);
-    }
-    .subtitle {
-      color: rgba(255,210,160,0.85);
-      margin-bottom: 30px;
-      font-size: 0.95rem;
-    }
+    h1 { color: #fff8f0; font-size: 1.8rem; margin-bottom: 6px; text-shadow: 0 2px 16px rgba(255,100,0,0.5); }
+    .subtitle { color: rgba(255,210,160,0.85); margin-bottom: 24px; font-size: 0.9rem; }
 
-    /* 카드 공통 */
-    .card {
-      background: white;
-      border-radius: 24px;
-      padding: 28px;
-      width: 100%;
-      max-width: 520px;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.25);
-      margin-bottom: 20px;
-    }
-
-    /* 결과 박스 */
-    .roulette-area { text-align: center; margin-bottom: 24px; }
-    .result-boxes { display: flex; gap: 10px; justify-content: center; margin-bottom: 20px; }
-
-    .result-box {
-      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-      border-radius: 18px;
-      padding: 22px 20px;
-      flex: 1;
-      box-shadow: 0 6px 20px rgba(240,147,251,0.35);
-      transition: transform 0.2s;
-    }
-    .result-box .person-label {
-      font-size: 0.75rem;
-      color: rgba(255,255,255,0.85);
-      margin-bottom: 6px;
-      font-weight: 600;
-    }
-    .result-box .menu-name {
-      font-size: 1.5rem;
-      font-weight: 800;
-      color: white;
-      text-shadow: 0 1px 4px rgba(0,0,0,0.1);
-      min-height: 40px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .result-box .menu-emoji { font-size: 2.2rem; margin-bottom: 6px; }
-
-    .result-box.spinning .menu-name { animation: spin-text 0.1s infinite; }
-    @keyframes spin-text {
-      0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; }
-    }
-    .result-box.landed { animation: bounce 0.5s ease; }
-    @keyframes bounce {
-      0% { transform: scale(1); }
-      40% { transform: scale(1.12); }
-      70% { transform: scale(0.95); }
-      100% { transform: scale(1); }
-    }
-
-    /* 버튼 */
-    .spin-btn {
-      width: 100%;
-      padding: 18px;
-      background: linear-gradient(135deg, #ff6a00 0%, #ee0979 100%);
-      color: white;
-      border: none;
-      border-radius: 16px;
-      font-size: 1.2rem;
-      font-weight: 800;
-      cursor: pointer;
-      transition: all 0.2s;
-      font-family: inherit;
-      box-shadow: 0 6px 24px rgba(255,80,0,0.45);
-    }
-    .spin-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 32px rgba(255,80,0,0.6); }
-    .spin-btn:active { transform: translateY(0); }
-    .spin-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
-
-    /* 지도 카드 */
-    .map-card {
-      background: white;
-      border-radius: 24px;
-      width: 100%;
-      max-width: 520px;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.25);
-      margin-bottom: 20px;
-      overflow: hidden;
-      display: none;
-    }
-    .map-card.visible { display: block; }
-
-    .map-header {
-      padding: 18px 22px 14px;
-      border-bottom: 1px solid #f0f0f0;
-    }
-    .map-header h2 { font-size: 1rem; color: #333; margin-bottom: 4px; }
-    .map-header p  { font-size: 0.82rem; color: #999; }
-
-    #map { width: 100%; height: 320px; }
-
-    /* 식당 목록 */
-    .restaurant-list {
-      max-height: 260px;
-      overflow-y: auto;
-      border-top: 1px solid #f0f0f0;
-    }
-    .restaurant-item {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-      padding: 13px 20px;
-      border-bottom: 1px solid #fafafa;
-      cursor: pointer;
-      transition: background 0.15s;
-    }
-    .restaurant-item:hover { background: #fff8f3; }
-    .restaurant-item:last-child { border-bottom: none; }
-
-    .r-emoji { font-size: 1.6rem; min-width: 36px; text-align: center; }
-    .r-info { flex: 1; }
-    .r-name { font-size: 0.95rem; font-weight: 700; color: #222; }
-    .r-cat  { font-size: 0.78rem; color: #ff6a00; font-weight: 600; margin-top: 2px; }
-    .r-addr { font-size: 0.75rem; color: #aaa; margin-top: 2px; }
-    .r-dist { font-size: 0.8rem; color: #888; min-width: 42px; text-align: right; }
-
-    /* 메뉴 관리 카드 */
-    .menu-card {
-      background: white;
-      border-radius: 24px;
-      padding: 28px;
-      width: 100%;
-      max-width: 520px;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.25);
-    }
-    .menu-card h2 { font-size: 1rem; color: #444; margin-bottom: 16px; }
-
-    .category-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; }
-    .cat-tab {
-      padding: 6px 14px;
-      border-radius: 20px;
-      border: none;
-      font-size: 0.82rem;
-      cursor: pointer;
-      font-family: inherit;
-      font-weight: 600;
-      transition: all 0.2s;
-      background: #f0f0f0;
-      color: #666;
-    }
-    .cat-tab.active { background: #ff6a00; color: white; }
-
-    .menu-list { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; min-height: 50px; }
-
-    .menu-tag {
-      display: flex;
-      align-items: center;
-      gap: 5px;
-      background: #fff3ec;
-      border: 1.5px solid #ffd0b0;
-      border-radius: 20px;
-      padding: 6px 12px;
-      font-size: 0.88rem;
-      color: #c04000;
-      font-weight: 600;
-      transition: all 0.2s;
-    }
-    .menu-tag.excluded { background: #f5f5f5; border-color: #ddd; color: #999; text-decoration: line-through; }
-    .menu-tag .tag-toggle { cursor: pointer; font-size: 0.75rem; opacity: 0.6; transition: opacity 0.15s; }
-    .menu-tag .tag-toggle:hover { opacity: 1; }
-
-    .add-menu-row { display: flex; gap: 8px; }
-    .add-menu-input {
-      flex: 1;
-      padding: 10px 14px;
-      border: 1.5px solid #e0e0e0;
-      border-radius: 12px;
-      font-size: 0.9rem;
-      font-family: inherit;
-      outline: none;
-      transition: border-color 0.2s;
-    }
-    .add-menu-input:focus { border-color: #ff6a00; }
-    .add-btn {
-      padding: 10px 18px;
-      background: #ff6a00;
-      color: white;
-      border: none;
-      border-radius: 12px;
-      font-size: 0.9rem;
-      font-weight: 700;
-      cursor: pointer;
-      font-family: inherit;
-      transition: background 0.2s;
-    }
-    .add-btn:hover { background: #d95500; }
-
-    .menu-count { font-size: 0.78rem; color: #aaa; margin-top: 8px; }
-
-    .footer { color: rgba(255,180,100,0.5); font-size: 0.78rem; margin-top: 16px; }
-
-    /* ── 모바일 반응형 ── */
+    /* 공통 카드 */
     .card, .map-card, .menu-card, .location-card {
-      width: 100%;
-      max-width: 520px;
+      background: white; border-radius: 22px; width: 100%; max-width: 520px;
+      box-shadow: 0 16px 48px rgba(0,0,0,0.28); margin-bottom: 18px;
     }
+    .card, .menu-card, .location-card { padding: 22px 18px; }
 
-    @media (max-width: 480px) {
-      h1 { font-size: 1.5rem; }
-
-      .card, .menu-card, .location-card {
-        padding: 20px 16px;
-        border-radius: 18px;
-      }
-
-      /* 위치 버튼 세로 배열 */
-      .location-btns {
-        flex-direction: column;
-      }
-      .loc-btn { width: 100%; }
-
-      /* 식당 추가 그리드 → 1열 */
-      .restaurant-add-grid {
-        grid-template-columns: 1fr;
-      }
-      .restaurant-add-grid input.full {
-        grid-column: 1;
-      }
-
-      /* 메뉴 추가 입력창 */
-      .add-menu-row { flex-wrap: wrap; }
-      .add-menu-input { min-width: 0; width: 100%; }
-
-      /* 카테고리 탭 */
-      .category-tabs { gap: 4px; }
-      .cat-tab { padding: 5px 10px; font-size: 0.78rem; }
-
-      /* 식당 목록 아이템 */
-      .restaurant-item { padding: 11px 14px; gap: 10px; }
-      .r-emoji { font-size: 1.3rem; min-width: 28px; }
-      .r-name  { font-size: 0.88rem; }
-
-      /* 결과 박스 */
-      .result-box { padding: 18px 12px; }
-      .result-box .menu-name { font-size: 1.3rem; }
-
-      /* 지도 */
-      #map { height: 260px; }
-
-      /* 수동 입력 행 → 세로 */
-      .location-manual .manual-row { flex-direction: column; }
-    }
-
-    /* 위치 설정 카드 */
-    .location-card {
-      background: white;
-      border-radius: 24px;
-      padding: 22px 28px;
-      width: 100%;
-      max-width: 520px;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.25);
-      margin-bottom: 20px;
-    }
-    .location-card h2 { font-size: 1rem; color: #444; margin-bottom: 14px; }
-
+    /* 위치 설정 */
+    .location-card h2 { font-size: 0.95rem; color: #444; margin-bottom: 12px; }
     .location-status {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 12px 14px;
-      border-radius: 12px;
-      background: #f9f9f9;
-      margin-bottom: 14px;
-      font-size: 0.88rem;
+      display: flex; align-items: center; gap: 10px;
+      padding: 11px 13px; border-radius: 11px; background: #f9f9f9; margin-bottom: 12px;
     }
-    .location-status.set   { background: #fff3ec; }
-    .location-status .dot  { width: 10px; height: 10px; border-radius: 50%; background: #ccc; flex-shrink: 0; }
+    .location-status.set { background: #fff3ec; }
+    .location-status .dot { width: 9px; height: 9px; border-radius: 50%; background: #ccc; flex-shrink: 0; }
     .location-status.set .dot { background: #ff6a00; }
-    .location-status .loc-text { flex: 1; color: #555; }
+    .location-status .loc-text { flex: 1; font-size: 0.85rem; color: #555; }
     .location-status.set .loc-text { color: #c04000; font-weight: 600; }
 
-    .location-btns { display: flex; gap: 8px; margin-bottom: 12px; }
+    .location-btns { display: flex; gap: 7px; margin-bottom: 10px; flex-wrap: wrap; }
     .loc-btn {
-      flex: 1;
-      padding: 10px;
-      border: 1.5px solid #e0e0e0;
-      border-radius: 12px;
-      background: white;
-      font-size: 0.85rem;
-      font-weight: 700;
-      cursor: pointer;
-      font-family: inherit;
-      color: #555;
-      transition: all 0.2s;
+      flex: 1; min-width: 80px; padding: 9px 6px; border: 1.5px solid #e0e0e0;
+      border-radius: 11px; background: white; font-size: 0.8rem; font-weight: 700;
+      cursor: pointer; font-family: inherit; color: #555; transition: all 0.2s;
     }
     .loc-btn.primary { background: #ff6a00; color: white; border-color: #ff6a00; }
     .loc-btn.primary:hover { background: #d95500; }
     .loc-btn:hover:not(.primary) { border-color: #ff6a00; color: #ff6a00; }
 
-    .location-manual {
-      display: none;
-      gap: 8px;
-      flex-direction: column;
-    }
+    .location-manual { display: none; flex-direction: column; gap: 7px; margin-top: 4px; }
     .location-manual.open { display: flex; }
     .location-manual input {
-      padding: 9px 12px;
-      border: 1.5px solid #e0e0e0;
-      border-radius: 10px;
-      font-size: 0.85rem;
-      font-family: inherit;
-      outline: none;
-      transition: border-color 0.2s;
+      padding: 9px 11px; border: 1.5px solid #e0e0e0; border-radius: 10px;
+      font-size: 0.85rem; font-family: inherit; outline: none; width: 100%;
     }
     .location-manual input:focus { border-color: #ff6a00; }
-    .location-manual .manual-row { display: flex; gap: 8px; }
-    .location-manual .manual-row input { flex: 1; }
-    .location-manual .save-loc-btn {
-      padding: 9px;
-      background: #ff6a00;
-      color: white;
-      border: none;
-      border-radius: 10px;
-      font-size: 0.85rem;
-      font-weight: 700;
-      cursor: pointer;
-      font-family: inherit;
-      transition: background 0.2s;
+    .manual-row { display: flex; gap: 7px; }
+    .manual-row input { flex: 1; min-width: 0; }
+    .save-loc-btn {
+      padding: 9px; background: #ff6a00; color: white; border: none;
+      border-radius: 10px; font-size: 0.85rem; font-weight: 700;
+      cursor: pointer; font-family: inherit;
     }
-    .location-manual .save-loc-btn:hover { background: #d95500; }
+    .loc-hint { font-size: 0.72rem; color: #bbb; line-height: 1.4; }
 
-    /* 식당 추가 섹션 */
-    .section-divider {
-      border: none;
-      border-top: 1px solid #f0f0f0;
-      margin: 20px 0;
+    /* 룰렛 결과 */
+    .roulette-area { text-align: center; margin-bottom: 20px; }
+    .result-box {
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      border-radius: 18px; padding: 22px 16px; width: 100%;
+      box-shadow: 0 6px 20px rgba(240,147,251,0.35);
     }
-    .restaurant-add-title {
-      font-size: 1rem;
-      color: #444;
-      margin-bottom: 14px;
-      display: flex;
-      align-items: center;
-      gap: 6px;
+    .result-box .person-label { font-size: 0.75rem; color: rgba(255,255,255,0.85); margin-bottom: 5px; font-weight: 600; }
+    .result-box .menu-name {
+      font-size: 1.8rem; font-weight: 800; color: white;
+      text-shadow: 0 1px 4px rgba(0,0,0,0.15); min-height: 44px;
+      display: flex; align-items: center; justify-content: center;
     }
-    .restaurant-add-grid {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      margin-bottom: 10px;
+    .result-box .menu-emoji { font-size: 2.4rem; margin-bottom: 6px; }
+    .result-box.spinning .menu-name { animation: spin-text 0.1s infinite; }
+    @keyframes spin-text { 0%{opacity:1} 50%{opacity:0.3} 100%{opacity:1} }
+    .result-box.landed { animation: bounce 0.5s ease; }
+    @keyframes bounce {
+      0%{transform:scale(1)} 40%{transform:scale(1.1)} 70%{transform:scale(0.96)} 100%{transform:scale(1)}
     }
-    .restaurant-add-row {
-      display: flex;
-      gap: 8px;
-    }
-    .restaurant-add-row input,
-    .restaurant-add-row select {
-      flex: 1;
-      min-width: 0;
-    }
-    .restaurant-add-grid input,
-    .restaurant-add-grid select,
-    .restaurant-add-row input,
-    .restaurant-add-row select {
-      width: 100%;
-      padding: 10px 12px;
-      border: 1.5px solid #e0e0e0;
-      border-radius: 10px;
-      font-size: 0.88rem;
-      font-family: inherit;
-      outline: none;
-      transition: border-color 0.2s;
-      box-sizing: border-box;
-    }
-    .restaurant-add-grid input:focus,
-    .restaurant-add-grid select:focus,
-    .restaurant-add-row input:focus,
-    .restaurant-add-row select:focus { border-color: #ff6a00; }
-    .add-restaurant-btn {
-      width: 100%;
-      padding: 10px;
-      background: #fff3ec;
-      color: #ff6a00;
-      border: 1.5px solid #ffd0b0;
-      border-radius: 10px;
-      font-size: 0.88rem;
-      font-weight: 700;
-      cursor: pointer;
-      font-family: inherit;
-      transition: all 0.2s;
-    }
-    .add-restaurant-btn:hover { background: #ff6a00; color: white; }
 
-    .restaurant-tag-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
-    .restaurant-tag {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      background: #f5f5f5;
-      border-radius: 16px;
-      padding: 5px 10px;
-      font-size: 0.8rem;
-      color: #555;
+    /* 뽑기 버튼 */
+    .spin-btn {
+      width: 100%; padding: 17px;
+      background: linear-gradient(135deg, #ff6a00 0%, #ee0979 100%);
+      color: white; border: none; border-radius: 15px; font-size: 1.15rem;
+      font-weight: 800; cursor: pointer; font-family: inherit;
+      box-shadow: 0 6px 24px rgba(255,80,0,0.45); transition: all 0.2s;
     }
-    .restaurant-tag .del-btn {
-      cursor: pointer;
-      color: #ccc;
-      font-size: 0.7rem;
-      transition: color 0.15s;
+    .spin-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 32px rgba(255,80,0,0.55); }
+    .spin-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+    /* 지도 카드 */
+    .map-card { display: none; overflow: hidden; }
+    .map-card.visible { display: block; }
+    .map-header { padding: 16px 18px 12px; border-bottom: 1px solid #f0f0f0; }
+    .map-header h2 { font-size: 0.95rem; color: #333; margin-bottom: 3px; }
+    .map-header p  { font-size: 0.78rem; color: #999; }
+    #kakaoMap { width: 100%; height: 300px; }
+
+    /* 반경 슬라이더 */
+    .radius-bar {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 18px; background: #fafafa; border-bottom: 1px solid #f0f0f0;
+      font-size: 0.8rem; color: #666;
     }
-    .restaurant-tag .del-btn:hover { color: #e00; }
+    .radius-bar input[type=range] { flex: 1; accent-color: #ff6a00; }
+    .radius-val { font-weight: 700; color: #ff6a00; min-width: 38px; }
+
+    /* 식당 목록 */
+    .restaurant-list { max-height: 280px; overflow-y: auto; }
+    .restaurant-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 16px; border-bottom: 1px solid #fafafa;
+      cursor: pointer; transition: background 0.15s;
+    }
+    .restaurant-item:hover { background: #fff8f3; }
+    .restaurant-item:last-child { border-bottom: none; }
+    .r-rank { font-size: 0.75rem; font-weight: 800; color: #ff6a00; min-width: 20px; }
+    .r-info { flex: 1; min-width: 0; }
+    .r-name { font-size: 0.9rem; font-weight: 700; color: #222; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .r-cat  { font-size: 0.72rem; color: #ff6a00; font-weight: 600; margin-top: 1px; }
+    .r-addr { font-size: 0.7rem; color: #bbb; margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .r-dist { font-size: 0.78rem; color: #999; min-width: 38px; text-align: right; flex-shrink: 0; }
+    .r-link { font-size: 0.7rem; color: #3498db; text-decoration: none; }
+    .r-link:hover { text-decoration: underline; }
+
+    .map-loading {
+      padding: 30px; text-align: center; color: #ccc; font-size: 0.88rem;
+    }
+    .map-loading .spinner {
+      display: inline-block; width: 22px; height: 22px;
+      border: 3px solid #f0f0f0; border-top-color: #ff6a00;
+      border-radius: 50%; animation: spin 0.8s linear infinite; margin-bottom: 8px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* 메뉴 관리 */
+    .menu-card h2 { font-size: 0.95rem; color: #444; margin-bottom: 14px; }
+    .category-tabs { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 14px; }
+    .cat-tab {
+      padding: 5px 12px; border-radius: 18px; border: none;
+      font-size: 0.8rem; cursor: pointer; font-family: inherit;
+      font-weight: 600; transition: all 0.2s; background: #f0f0f0; color: #666;
+    }
+    .cat-tab.active { background: #ff6a00; color: white; }
+    .menu-list { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 14px; min-height: 44px; }
+    .menu-tag {
+      display: flex; align-items: center; gap: 4px; background: #fff3ec;
+      border: 1.5px solid #ffd0b0; border-radius: 18px; padding: 5px 11px;
+      font-size: 0.84rem; color: #c04000; font-weight: 600; transition: all 0.2s;
+    }
+    .menu-tag.excluded { background: #f5f5f5; border-color: #ddd; color: #bbb; text-decoration: line-through; }
+    .menu-tag .tag-toggle { cursor: pointer; font-size: 0.7rem; opacity: 0.5; }
+    .menu-tag .tag-toggle:hover { opacity: 1; }
+    .add-menu-row { display: flex; gap: 7px; }
+    .add-menu-input {
+      flex: 1; min-width: 0; padding: 9px 12px; border: 1.5px solid #e0e0e0;
+      border-radius: 11px; font-size: 0.88rem; font-family: inherit; outline: none;
+    }
+    .add-menu-input:focus { border-color: #ff6a00; }
+    .add-btn {
+      padding: 9px 16px; background: #ff6a00; color: white; border: none;
+      border-radius: 11px; font-size: 0.88rem; font-weight: 700; cursor: pointer; font-family: inherit;
+    }
+    .menu-count { font-size: 0.74rem; color: #bbb; margin-top: 7px; }
+    .section-divider { border: none; border-top: 1px solid #f0f0f0; margin: 18px 0; }
+
+    .footer { color: rgba(255,180,100,0.45); font-size: 0.74rem; margin-top: 14px; text-align: center; }
   </style>
 </head>
 <body>
 
-  <!-- 배경 이모지 -->
-  <div class="bg-food" style="left:5%;animation-duration:14s;animation-delay:0s;font-size:2.5rem">🍜</div>
-  <div class="bg-food" style="left:18%;animation-duration:18s;animation-delay:3s">🍣</div>
-  <div class="bg-food" style="left:32%;animation-duration:12s;animation-delay:1s;font-size:1.6rem">🍕</div>
-  <div class="bg-food" style="left:50%;animation-duration:16s;animation-delay:5s;font-size:3rem">🥩</div>
-  <div class="bg-food" style="left:65%;animation-duration:20s;animation-delay:2s">🍱</div>
-  <div class="bg-food" style="left:78%;animation-duration:13s;animation-delay:7s;font-size:1.8rem">🌮</div>
-  <div class="bg-food" style="left:90%;animation-duration:17s;animation-delay:4s">🍔</div>
+  <div class="bg-food" style="left:5%;animation-duration:14s;animation-delay:0s">🍜</div>
+  <div class="bg-food" style="left:20%;animation-duration:18s;animation-delay:3s">🍣</div>
+  <div class="bg-food" style="left:40%;animation-duration:12s;animation-delay:1s;font-size:1.5rem">🍕</div>
+  <div class="bg-food" style="left:60%;animation-duration:16s;animation-delay:5s;font-size:2.5rem">🥩</div>
+  <div class="bg-food" style="left:80%;animation-duration:20s;animation-delay:2s">🍱</div>
 
   <h1>🍽️ 점심 메뉴 룰렛</h1>
-  <p class="subtitle" id="mainSubtitle">내 위치 기준 맛집 지도!</p>
+  <p class="subtitle" id="mainSubtitle">카카오맵 실시간 맛집 연동!</p>
 
-  <!-- 위치 설정 카드 -->
+  <!-- 위치 설정 -->
   <div class="location-card">
     <h2>📍 내 위치 설정</h2>
     <div class="location-status" id="locationStatus">
       <div class="dot"></div>
-      <div class="loc-text" id="locationText">위치가 설정되지 않았어요</div>
+      <div class="loc-text" id="locationText">위치 미설정 (기본: 매봉역)</div>
     </div>
     <div class="location-btns">
-      <button class="loc-btn primary" onclick="getGPS()">🛰️ GPS로 자동 설정</button>
+      <button class="loc-btn primary" onclick="getGPS()">🛰️ GPS 자동설정</button>
       <button class="loc-btn" onclick="toggleManual()">✏️ 직접 입력</button>
       <button class="loc-btn" onclick="resetLocation()" id="resetBtn" style="display:none">🔄 초기화</button>
     </div>
     <div class="location-manual" id="manualForm">
-      <input id="locLabel" placeholder="장소 이름 (예: 우리 사무실, 강남역)" maxlength="20">
+      <input id="locLabel" placeholder="장소 이름 (예: 우리 사무실)" maxlength="20">
       <div class="manual-row">
         <input id="locLat" placeholder="위도 (예: 37.4849)" type="number" step="0.0001">
         <input id="locLng" placeholder="경도 (예: 127.0338)" type="number" step="0.0001">
       </div>
-      <small style="color:#bbb;font-size:0.75rem">💡 네이버지도에서 원하는 곳 우클릭 → "이곳이 궁금해요" 하면 좌표가 나와요</small>
+      <p class="loc-hint">💡 카카오맵에서 원하는 위치 길게 누르면 좌표가 나와요</p>
       <button class="save-loc-btn" onclick="saveManualLocation()">✔ 이 위치로 저장</button>
     </div>
   </div>
 
-  <!-- 룰렛 카드 -->
+  <!-- 룰렛 -->
   <div class="card">
     <div class="roulette-area">
-      <div class="result-boxes" id="resultBoxes"></div>
+      <div class="result-box" id="box0">
+        <div class="menu-emoji" id="emoji0">🎯</div>
+        <div class="person-label">오늘의 메뉴</div>
+        <div class="menu-name" id="menu0">?</div>
+      </div>
     </div>
     <button class="spin-btn" id="spinBtn" onclick="spin()">🎰 메뉴 뽑기!</button>
   </div>
 
-  <!-- 지도 카드 -->
+  <!-- 지도 -->
   <div class="map-card" id="mapCard">
     <div class="map-header">
-      <h2 id="mapTitle">📍 주변 식당</h2>
-      <p id="mapSubtitle">매봉역 인근 추천 식당</p>
+      <h2 id="mapTitle">📍 주변 맛집</h2>
+      <p id="mapSubtitle">카카오맵 실시간 검색</p>
     </div>
-    <div id="map"></div>
-    <div class="restaurant-list" id="restaurantList"></div>
+    <div class="radius-bar">
+      <span>반경</span>
+      <input type="range" id="radiusSlider" min="300" max="2000" step="100" value="500" oninput="onRadiusChange(this.value)">
+      <span class="radius-val" id="radiusVal">500m</span>
+    </div>
+    <div id="kakaoMap"></div>
+    <div class="restaurant-list" id="restaurantList">
+      <div class="map-loading">
+        <div class="spinner"></div><br>맛집 검색 중...
+      </div>
+    </div>
   </div>
 
-  <!-- 메뉴 + 식당 관리 카드 -->
+  <!-- 메뉴 관리 -->
   <div class="menu-card">
     <h2>📋 메뉴 목록 관리</h2>
     <div class="category-tabs" id="categoryTabs"></div>
@@ -530,65 +272,12 @@
              onkeydown="if(event.key==='Enter')addMenu()">
       <button class="add-btn" onclick="addMenu()">추가</button>
     </div>
-
-    <hr class="section-divider">
-
-    <div class="restaurant-add-title">🏠 식당 직접 추가</div>
-    <div class="restaurant-add-grid">
-      <div class="restaurant-add-row">
-        <input id="rName" placeholder="식당 이름" maxlength="20" style="flex:2">
-        <select id="rCat" style="flex:1">
-          <option value="한식">한식</option>
-          <option value="중식">중식</option>
-          <option value="일식">일식</option>
-          <option value="양식">양식</option>
-          <option value="분식">분식</option>
-          <option value="기타">기타</option>
-        </select>
-      </div>
-      <input id="rAddr" placeholder="주소 (예: 서울 강남구 매봉로 45)" maxlength="50">
-      <div class="restaurant-add-row">
-        <input id="rLat" placeholder="위도 (예: 37.4849)" type="number" step="0.0001">
-        <input id="rLng" placeholder="경도 (예: 127.0338)" type="number" step="0.0001">
-      </div>
-    </div>
-    <button class="add-restaurant-btn" onclick="addRestaurant()">🏠 식당 추가하기</button>
-    <div class="restaurant-tag-list" id="customRestaurantTags"></div>
   </div>
 
-  <p class="footer">메뉴 태그 ✖ 클릭 → 오늘 제외 / 지도 마커 클릭 → 상세정보</p>
+  <p class="footer">카카오맵 실시간 검색 · 반경 조절 가능 · 메뉴 태그 ✖ = 오늘 제외</p>
 
 <script>
-  /* ── 매봉역 인근 식당 기본 데이터 ── */
-  const BASE_RESTAURANTS = [
-    // 한식
-    { name:"하우스된장",   cat:"한식", emoji:"🍲", addr:"서울 강남구 개포로 208",          lat:37.4853, lng:127.0312 },
-    { name:"매봉순대국",   cat:"한식", emoji:"🍲", addr:"서울 강남구 매봉로 53",           lat:37.4841, lng:127.0348 },
-    { name:"참나무숯불갈비",cat:"한식",emoji:"🥩", addr:"서울 강남구 삼성로 51길 14",      lat:37.4870, lng:127.0355 },
-    { name:"진주회관",     cat:"한식", emoji:"🥗", addr:"서울 강남구 개포로 212",          lat:37.4860, lng:127.0320 },
-    { name:"청기와타운",   cat:"한식", emoji:"🥩", addr:"서울 강남구 매봉로 45",           lat:37.4835, lng:127.0342 },
-    { name:"한솥도시락",   cat:"한식", emoji:"🍱", addr:"서울 강남구 개포로 210",          lat:37.4848, lng:127.0330 },
-    { name:"국밥나라",     cat:"한식", emoji:"🍚", addr:"서울 강남구 도곡로 416",          lat:37.4825, lng:127.0360 },
-    // 중식
-    { name:"홍보각",       cat:"중식", emoji:"🍜", addr:"서울 강남구 도곡로 429",          lat:37.4832, lng:127.0328 },
-    { name:"차이나팰리스", cat:"중식", emoji:"🥟", addr:"서울 강남구 매봉로 58",           lat:37.4857, lng:127.0365 },
-    { name:"마라공방",     cat:"중식", emoji:"🌶️", addr:"서울 강남구 개포로 215",          lat:37.4863, lng:127.0308 },
-    // 일식
-    { name:"스시오마카세", cat:"일식", emoji:"🍣", addr:"서울 강남구 삼성로 49길 8",       lat:37.4875, lng:127.0340 },
-    { name:"라멘이치방",   cat:"일식", emoji:"🍜", addr:"서울 강남구 매봉로 47",           lat:37.4843, lng:127.0333 },
-    { name:"돈카츠명가",   cat:"일식", emoji:"🍱", addr:"서울 강남구 개포로 205",          lat:37.4856, lng:127.0348 },
-    { name:"우동가마",     cat:"일식", emoji:"🍜", addr:"서울 강남구 도곡로 420",          lat:37.4828, lng:127.0318 },
-    // 양식
-    { name:"파스타공방",   cat:"양식", emoji:"🍝", addr:"서울 강남구 매봉로 62",           lat:37.4862, lng:127.0370 },
-    { name:"브런치카페",   cat:"양식", emoji:"🥗", addr:"서울 강남구 도곡로 422",          lat:37.4830, lng:127.0310 },
-    { name:"피자알볼로",   cat:"양식", emoji:"🍕", addr:"서울 강남구 개포로 207",          lat:37.4851, lng:127.0302 },
-    // 분식
-    { name:"엽기떡볶이",   cat:"분식", emoji:"🍢", addr:"서울 강남구 매봉로 51",           lat:37.4839, lng:127.0325 },
-    { name:"김밥나라",     cat:"분식", emoji:"🍙", addr:"서울 강남구 개포로 213",          lat:37.4866, lng:127.0315 },
-    { name:"순대타운",     cat:"분식", emoji:"🌭", addr:"서울 강남구 도곡로 418",          lat:37.4827, lng:127.0335 },
-  ];
-
-  /* ── 카테고리 → 음식 이름 매핑 ── */
+  /* ── 메뉴 데이터 ── */
   const CAT_KEYWORDS = {
     "한식": ["김치찌개","된장찌개","순두부찌개","비빔밥","불고기","삼겹살","냉면","국밥","곱창","쌈밥","갈비탕","설렁탕","닭갈비","제육볶음","보쌈"],
     "중식": ["짜장면","짬뽕","탕수육","마라탕","양꼬치","볶음밥","훠궈","딤섬"],
@@ -596,155 +285,110 @@
     "양식": ["파스타","피자","버거","샌드위치","스테이크","샐러드","리조또","타코"],
     "분식": ["떡볶이","순대","김밥","라면","튀김","쫄면","만두","어묵"],
   };
+  const MENUS = Object.fromEntries(
+    Object.entries(CAT_KEYWORDS).map(([k,v]) => [k, v.map(n => ({name:n}))])
+  );
+  const EMOJIS = ["🎉","✨","🔥","💥","⭐","🌟","🎊","💫"];
+  const CAT_EMOJI = {한식:"🍲",중식:"🍜",일식:"🍣",양식:"🍝",분식:"🍢"};
 
-  const MENUS = {
-    "한식": CAT_KEYWORDS["한식"].map(n=>({name:n,emoji:"🍲"})),
-    "중식": CAT_KEYWORDS["중식"].map(n=>({name:n,emoji:"🍜"})),
-    "일식": CAT_KEYWORDS["일식"].map(n=>({name:n,emoji:"🍣"})),
-    "양식": CAT_KEYWORDS["양식"].map(n=>({name:n,emoji:"🍝"})),
-    "분식": CAT_KEYWORDS["분식"].map(n=>({name:n,emoji:"🍢"})),
+  /* 카카오 카테고리 → 음식 검색 키워드 매핑 */
+  const CAT_SEARCH = {
+    "한식": "한식",
+    "중식": "중식",
+    "일식": "일식 일본음식",
+    "양식": "양식 이탈리안 패스트푸드",
+    "분식": "분식",
   };
 
-  const EMOJIS = ["🎉","✨","🔥","💥","⭐","🌟","🎊","💫"];
-
-  /* ── 위치 관리 ── */
+  /* ── 위치 ── */
+  const DEFAULT_LOC = { lat: 37.4849, lng: 127.0338, label: '매봉역' };
   let userLocation = JSON.parse(localStorage.getItem('userLocation') || 'null');
-
-  function getBaseLocation() {
-    return userLocation ? [userLocation.lat, userLocation.lng] : [37.4849, 127.0338];
-  }
+  function getBase() { return userLocation || DEFAULT_LOC; }
 
   function updateLocationUI() {
-    const status = document.getElementById('locationStatus');
-    const text   = document.getElementById('locationText');
-    const resetBtn = document.getElementById('resetBtn');
+    const st = document.getElementById('locationStatus');
+    const tx = document.getElementById('locationText');
+    const rb = document.getElementById('resetBtn');
     if (userLocation) {
-      status.classList.add('set');
-      text.textContent = `📍 ${userLocation.label} (${userLocation.lat.toFixed(4)}, ${userLocation.lng.toFixed(4)})`;
-      resetBtn.style.display = '';
-      document.getElementById('mainSubtitle').textContent = `${userLocation.label} 기준 맛집 지도!`;
+      st.classList.add('set');
+      tx.textContent = `${userLocation.label} (${userLocation.lat.toFixed(4)}, ${userLocation.lng.toFixed(4)})`;
+      rb.style.display = '';
+      document.getElementById('mainSubtitle').textContent = `${userLocation.label} 기준 카카오 맛집 검색!`;
     } else {
-      status.classList.remove('set');
-      text.textContent = '위치가 설정되지 않았어요 (기본: 매봉역)';
-      resetBtn.style.display = 'none';
-      document.getElementById('mainSubtitle').textContent = '내 위치 기준 맛집 지도!';
+      st.classList.remove('set');
+      tx.textContent = '위치 미설정 (기본: 매봉역)';
+      rb.style.display = 'none';
+      document.getElementById('mainSubtitle').textContent = '카카오맵 실시간 맛집 연동!';
     }
   }
 
-  function resetMap() {
-    // 위치가 바뀌면 지도를 완전히 리셋해서 새 위치로 재초기화
-    if (leafletMap) {
-      leafletMap.remove();
-      leafletMap = null;
-    }
+  function saveLocation(loc) {
+    userLocation = loc;
+    localStorage.setItem('userLocation', JSON.stringify(loc));
+    resetMapState();
+    updateLocationUI();
+  }
+
+  function getGPS() {
+    if (!navigator.geolocation) { alert('GPS를 지원하지 않아요.'); return; }
+    const btn = document.querySelector('.loc-btn.primary');
+    btn.textContent = '📡 찾는 중...'; btn.disabled = true;
+    navigator.geolocation.getCurrentPosition(
+      pos => {
+        const label = prompt('이 위치의 이름을 입력해주세요', '우리 사무실') || '내 위치';
+        saveLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude, label });
+        btn.textContent = '🛰️ GPS 자동설정'; btn.disabled = false;
+        alert(`✅ "${label}"로 저장됐어요!\n메뉴를 뽑으면 이 위치 기준으로 맛집이 검색됩니다.`);
+      },
+      () => { alert('위치 권한을 허용해주세요.'); btn.textContent = '🛰️ GPS 자동설정'; btn.disabled = false; }
+    );
+  }
+
+  function toggleManual() { document.getElementById('manualForm').classList.toggle('open'); }
+
+  function saveManualLocation() {
+    const label = document.getElementById('locLabel').value.trim() || '내 위치';
+    const lat = parseFloat(document.getElementById('locLat').value);
+    const lng = parseFloat(document.getElementById('locLng').value);
+    if (isNaN(lat) || isNaN(lng)) { alert('위도와 경도를 입력해주세요!'); return; }
+    saveLocation({ lat, lng, label });
+    document.getElementById('manualForm').classList.remove('open');
+    alert(`✅ "${label}"로 저장됐어요!\n메뉴를 뽑으면 이 위치 기준으로 맛집이 검색됩니다.`);
+  }
+
+  function resetLocation() {
+    if (!confirm('위치를 초기화할까요?')) return;
+    userLocation = null;
+    localStorage.removeItem('userLocation');
+    resetMapState();
+    updateLocationUI();
+  }
+
+  /* ── 지도 & 검색 ── */
+  let kakaoMap = null;
+  let markers = [];
+  let currentMenu = null;
+  let currentRadius = 500;
+
+  function resetMapState() {
+    if (kakaoMap) { kakaoMap = null; }
+    markers.forEach(m => m.setMap(null));
     markers = [];
     document.getElementById('mapCard').classList.remove('visible');
   }
 
-  function getGPS() {
-    if (!navigator.geolocation) { alert('이 브라우저는 GPS를 지원하지 않아요.'); return; }
-    const btn = document.querySelector('.loc-btn.primary');
-    btn.textContent = '📡 위치 찾는 중...';
-    btn.disabled = true;
-    navigator.geolocation.getCurrentPosition(
-      pos => {
-        const label = prompt('이 위치의 이름을 입력해주세요 (예: 우리 사무실)', '우리 사무실') || '내 위치';
-        userLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude, label };
-        localStorage.setItem('userLocation', JSON.stringify(userLocation));
-        btn.textContent = '🛰️ GPS로 자동 설정';
-        btn.disabled = false;
-        updateLocationUI();
-        resetMap();
-        alert(`✅ "${label}" 위치로 저장됐어요!\n다시 메뉴를 뽑으면 이 위치 기준으로 지도가 표시됩니다.`);
-      },
-      () => {
-        alert('위치를 가져오지 못했어요.\n브라우저 위치 권한을 허용해주세요.');
-        btn.textContent = '🛰️ GPS로 자동 설정';
-        btn.disabled = false;
-      }
-    );
-  }
-
-  function toggleManual() {
-    document.getElementById('manualForm').classList.toggle('open');
-  }
-
-  function saveManualLocation() {
-    const label = document.getElementById('locLabel').value.trim() || '내 위치';
-    const lat   = parseFloat(document.getElementById('locLat').value);
-    const lng   = parseFloat(document.getElementById('locLng').value);
-    if (isNaN(lat) || isNaN(lng)) { alert('위도와 경도를 입력해주세요!'); return; }
-    userLocation = { lat, lng, label };
-    localStorage.setItem('userLocation', JSON.stringify(userLocation));
-    document.getElementById('manualForm').classList.remove('open');
-    updateLocationUI();
-    resetMap();
-    alert(`✅ "${label}" 위치로 저장됐어요!\n다시 메뉴를 뽑으면 이 위치 기준으로 지도가 표시됩니다.`);
-  }
-
-  function resetLocation() {
-    if (!confirm('위치 설정을 초기화할까요?')) return;
-    userLocation = null;
-    localStorage.removeItem('userLocation');
-    updateLocationUI();
-    resetMap();
-  }
-
-  let currentCategory = "한식";
-  let customMenus   = JSON.parse(localStorage.getItem('lunchCustom') || '[]');
-  let excluded      = JSON.parse(localStorage.getItem('lunchExcluded') || '[]');
-  let customRests   = JSON.parse(localStorage.getItem('lunchRests') || '[]');
-  let spinning = false;
-  let leafletMap = null;
-  let markers = [];
-
-  /* ── 거리 계산 (km) ── */
-  function calcDist(lat1, lng1, lat2, lng2) {
-    const R = 6371;
-    const dLat = (lat2-lat1)*Math.PI/180;
-    const dLng = (lng2-lng1)*Math.PI/180;
-    const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;
-    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-  }
-
-  function distLabel(d) {
-    return d < 1 ? Math.round(d*1000)+'m' : d.toFixed(1)+'km';
-  }
-
-  /* ── 룰렛 ── */
-  function renderResultBoxes() {
-    document.getElementById('resultBoxes').innerHTML = `
-      <div class="result-box" id="box0">
-        <div class="menu-emoji" id="emoji0">🎯</div>
-        <div class="person-label">오늘의 메뉴</div>
-        <div class="menu-name" id="menu0">?</div>
-      </div>`;
-  }
-
-  function getAllMenus() {
-    let all = [];
-    Object.values(MENUS).forEach(list => list.forEach(m => all.push(m.name)));
-    customMenus.forEach(m => all.push(m));
-    return all.filter(m => !excluded.includes(m));
-  }
-
-  function menuToCategory(menuName) {
-    for (const [cat, words] of Object.entries(CAT_KEYWORDS)) {
-      if (words.includes(menuName)) return cat;
-    }
-    return null;
+  function onRadiusChange(val) {
+    currentRadius = parseInt(val);
+    document.getElementById('radiusVal').textContent = val >= 1000 ? (val/1000).toFixed(1)+'km' : val+'m';
+    if (currentMenu) searchPlaces(currentMenu);
   }
 
   function spin() {
-    if (spinning) return;
     const all = getAllMenus();
     if (!all.length) { alert('메뉴가 없어요!'); return; }
 
-    spinning = true;
     const btn = document.getElementById('spinBtn');
-    btn.disabled = true;
-    btn.textContent = '🎰 뽑는 중...';
-
+    btn.disabled = true; btn.textContent = '🎰 뽑는 중...';
     document.getElementById('box0').classList.remove('landed');
     document.getElementById('box0').classList.add('spinning');
 
@@ -754,7 +398,6 @@
       const r = all[Math.floor(Math.random()*all.length)];
       document.getElementById('menu0').textContent = r;
       document.getElementById('emoji0').textContent = EMOJIS[Math.floor(Math.random()*EMOJIS.length)];
-
       if (count >= 22) {
         clearInterval(interval);
         const pick = all[Math.floor(Math.random()*all.length)];
@@ -762,92 +405,164 @@
         document.getElementById('emoji0').textContent = '🎉';
         document.getElementById('box0').classList.remove('spinning');
         document.getElementById('box0').classList.add('landed');
-        spinning = false;
-        btn.disabled = false;
-        btn.textContent = '🎰 다시 뽑기!';
-        showMap(pick);
+        btn.disabled = false; btn.textContent = '🎰 다시 뽑기!';
+        currentMenu = pick;
+        showMapCard(pick);
       }
     }, 80);
   }
 
-  /* ── 지도 표시 ── */
-  function showMap(pickedMenu) {
-    const base = getBaseLocation();
-    const locLabel = userLocation ? userLocation.label : '매봉역';
-    const cat = menuToCategory(pickedMenu);
-    const allRests = [...BASE_RESTAURANTS, ...customRests];
-    const filtered = cat ? allRests.filter(r => r.cat === cat) : allRests;
-
-    const sorted = filtered
-      .map(r => ({...r, dist: calcDist(base[0], base[1], r.lat, r.lng)}))
-      .sort((a,b) => a.dist - b.dist);
-
+  function showMapCard(menu) {
+    const cat = menuToCategory(menu);
+    const base = getBase();
     const mapCard = document.getElementById('mapCard');
     mapCard.classList.add('visible');
-    document.getElementById('mapTitle').textContent = `📍 ${pickedMenu} 주변 식당`;
-    document.getElementById('mapSubtitle').textContent = `${locLabel} 기준 ${sorted.length}곳`;
+    document.getElementById('mapTitle').textContent = `📍 "${menu}" 맛집 검색`;
+    document.getElementById('mapSubtitle').textContent = `${base.label} 기준 · 반경 조절 가능`;
+    document.getElementById('restaurantList').innerHTML =
+      '<div class="map-loading"><div class="spinner"></div><br>카카오맵 검색 중...</div>';
 
-    if (!leafletMap) {
-      leafletMap = L.map('map').setView(base, 15);
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap'
-      }).addTo(leafletMap);
-    } else {
-      leafletMap.setView(base, 15);
+    // 지도 초기화
+    setTimeout(() => {
+      const container = document.getElementById('kakaoMap');
+      const options = { center: new kakao.maps.LatLng(base.lat, base.lng), level: 4 };
+      if (!kakaoMap) {
+        kakaoMap = new kakao.maps.Map(container, options);
+      } else {
+        kakaoMap.setCenter(new kakao.maps.LatLng(base.lat, base.lng));
+        kakaoMap.setLevel(4);
+      }
+
+      // 내 위치 마커
+      const myMarkerImg = new kakao.maps.MarkerImage(
+        'https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/markerStar.png',
+        new kakao.maps.Size(24, 35)
+      );
+      const myMarker = new kakao.maps.Marker({
+        position: new kakao.maps.LatLng(base.lat, base.lng),
+        map: kakaoMap,
+        image: myMarkerImg,
+        title: base.label
+      });
+      markers.push(myMarker);
+
+      searchPlaces(menu);
+      mapCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
+  }
+
+  function menuToCategory(name) {
+    for (const [cat, words] of Object.entries(CAT_KEYWORDS)) {
+      if (words.includes(name)) return cat;
+    }
+    return null;
+  }
+
+  function searchPlaces(menu) {
+    const cat = menuToCategory(menu);
+    const keyword = cat ? CAT_SEARCH[cat] || cat : menu;
+    const base = getBase();
+
+    // 기존 식당 마커만 제거 (내 위치 마커는 유지)
+    markers.slice(1).forEach(m => m.setMap(null));
+    markers = markers.slice(0, 1);
+
+    const ps = new kakao.maps.services.Places();
+    ps.keywordSearch(keyword + ' 맛집', (data, status) => {
+      if (status !== kakao.maps.services.Status.OK) {
+        document.getElementById('restaurantList').innerHTML =
+          '<div class="map-loading">검색 결과가 없어요 😢</div>';
+        return;
+      }
+
+      // 거리 계산 후 필터링
+      const results = data
+        .map(p => ({
+          ...p,
+          dist: calcDist(base.lat, base.lng, parseFloat(p.y), parseFloat(p.x))
+        }))
+        .filter(p => p.dist * 1000 <= currentRadius)
+        .sort((a,b) => a.dist - b.dist)
+        .slice(0, 15);
+
+      renderResults(results, base);
+    }, {
+      location: new kakao.maps.LatLng(base.lat, base.lng),
+      radius: currentRadius,
+      sort: kakao.maps.services.SortBy.DISTANCE
+    });
+  }
+
+  function renderResults(results, base) {
+    if (!results.length) {
+      document.getElementById('restaurantList').innerHTML =
+        `<div class="map-loading">반경 ${currentRadius}m 안에 결과가 없어요.<br>반경을 늘려보세요!</div>`;
+      return;
     }
 
-    markers.forEach(m => m.remove());
-    markers = [];
+    const infowindow = new kakao.maps.InfoWindow({ zIndex: 1 });
 
-    const officeIcon = L.divIcon({
-      html: '<div style="background:#ff6a00;border:3px solid white;border-radius:50%;width:18px;height:18px;box-shadow:0 2px 8px rgba(0,0,0,0.4)"></div>',
-      iconSize: [18, 18], iconAnchor: [9, 9]
-    });
-    const officeMarker = L.marker(base, {icon: officeIcon})
-      .addTo(leafletMap)
-      .bindPopup(`<b>📍 ${locLabel} (내 위치)</b>`);
-    markers.push(officeMarker);
+    results.forEach((p, i) => {
+      const pos = new kakao.maps.LatLng(parseFloat(p.y), parseFloat(p.x));
+      const marker = new kakao.maps.Marker({ position: pos, map: kakaoMap, title: p.place_name });
+      markers.push(marker);
 
-    // 식당 마커
-    sorted.forEach((r, i) => {
-      const icon = L.divIcon({
-        html: `<div style="background:white;border:2px solid #ff6a00;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:16px;box-shadow:0 2px 8px rgba(0,0,0,0.25)">${r.emoji}</div>`,
-        iconSize: [32, 32], iconAnchor: [16, 16]
+      kakao.maps.event.addListener(marker, 'click', () => {
+        infowindow.setContent(`
+          <div style="padding:8px 10px;font-size:13px;font-weight:700;max-width:160px">
+            ${p.place_name}<br>
+            <span style="font-size:11px;color:#ff6a00;font-weight:400">${p.category_name}</span><br>
+            <a href="${p.place_url}" target="_blank" style="font-size:11px;color:#3498db">카카오맵에서 보기</a>
+          </div>`);
+        infowindow.open(kakaoMap, marker);
+        kakaoMap.panTo(pos);
       });
-      const m = L.marker([r.lat, r.lng], {icon})
-        .addTo(leafletMap)
-        .bindPopup(`<b>${r.name}</b><br>${r.cat} · ${distLabel(r.dist)}<br><small>${r.addr}</small>`);
-      markers.push(m);
     });
 
-    // 식당 목록
-    const list = document.getElementById('restaurantList');
-    list.innerHTML = sorted.length
-      ? sorted.map((r,i) => `
-          <div class="restaurant-item" onclick="focusRestaurant(${i+1})">
-            <div class="r-emoji">${r.emoji}</div>
-            <div class="r-info">
-              <div class="r-name">${r.name}</div>
-              <div class="r-cat">${r.cat}</div>
-              <div class="r-addr">${r.addr}</div>
-            </div>
-            <div class="r-dist">${distLabel(r.dist)}</div>
-          </div>`).join('')
-      : '<div style="padding:20px;text-align:center;color:#ccc">이 카테고리 식당을 추가해보세요!</div>';
-
-    // 리스트 클릭 → 지도 포커스
-    window._sortedRests = sorted;
-    mapCard.scrollIntoView({behavior:'smooth', block:'start'});
+    document.getElementById('restaurantList').innerHTML = results.map((p, i) => `
+      <div class="restaurant-item" onclick="focusMarker(${i+1}, ${p.y}, ${p.x})">
+        <div class="r-rank">${i+1}</div>
+        <div class="r-info">
+          <div class="r-name">${p.place_name}</div>
+          <div class="r-cat">${p.category_name.split('>').pop().trim()}</div>
+          <div class="r-addr">${p.road_address_name || p.address_name}</div>
+          <a class="r-link" href="${p.place_url}" target="_blank" onclick="event.stopPropagation()">카카오맵에서 보기 →</a>
+        </div>
+        <div class="r-dist">${distLabel(p.dist)}</div>
+      </div>`).join('');
   }
 
-  function focusRestaurant(idx) {
-    const r = window._sortedRests[idx-1];
-    if (!r) return;
-    leafletMap.setView([r.lat, r.lng], 17);
-    markers[idx].openPopup();
+  function focusMarker(idx, lat, lng) {
+    const pos = new kakao.maps.LatLng(parseFloat(lat), parseFloat(lng));
+    kakaoMap.setLevel(3);
+    kakaoMap.panTo(pos);
+    if (markers[idx]) {
+      kakao.maps.event.trigger(markers[idx], 'click');
+    }
   }
+
+  function calcDist(lat1, lng1, lat2, lng2) {
+    const R = 6371;
+    const dLat = (lat2-lat1)*Math.PI/180;
+    const dLng = (lng2-lng1)*Math.PI/180;
+    const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  }
+
+  function distLabel(d) { return d < 1 ? Math.round(d*1000)+'m' : d.toFixed(1)+'km'; }
 
   /* ── 메뉴 관리 ── */
+  let currentCategory = "한식";
+  let customMenus = JSON.parse(localStorage.getItem('lunchCustom') || '[]');
+  let excluded    = JSON.parse(localStorage.getItem('lunchExcluded') || '[]');
+
+  function getAllMenus() {
+    let all = [];
+    Object.values(MENUS).forEach(list => list.forEach(m => all.push(m.name)));
+    customMenus.forEach(m => all.push(m));
+    return all.filter(m => !excluded.includes(m));
+  }
+
   function renderCategoryTabs() {
     const cats = [...Object.keys(MENUS), '직접추가'];
     document.getElementById('categoryTabs').innerHTML = cats.map(c =>
@@ -855,24 +570,18 @@
     ).join('');
   }
 
-  function selectCategory(cat) {
-    currentCategory = cat;
-    renderCategoryTabs();
-    renderMenuList();
-  }
+  function selectCategory(cat) { currentCategory = cat; renderCategoryTabs(); renderMenuList(); }
 
   function renderMenuList() {
     const menus = currentCategory === '직접추가'
-      ? customMenus.map(n=>({name:n,emoji:'🍴'}))
+      ? customMenus.map(n=>({name:n}))
       : (MENUS[currentCategory] || []);
-
     document.getElementById('menuList').innerHTML = menus.map(m =>
       `<span class="menu-tag ${excluded.includes(m.name)?'excluded':''}">
-        ${m.emoji} ${m.name}
+        ${m.name}
         <span class="tag-toggle" onclick="toggleExclude('${m.name}')">${excluded.includes(m.name)?'✚':'✖'}</span>
       </span>`
-    ).join('') || '<span style="color:#ccc;font-size:0.85rem">메뉴를 추가해보세요!</span>';
-
+    ).join('') || '<span style="color:#ccc;font-size:0.82rem">메뉴를 추가해보세요!</span>';
     document.getElementById('menuCount').textContent = `뽑기 가능 메뉴: ${getAllMenus().length}개`;
   }
 
@@ -890,53 +599,13 @@
     localStorage.setItem('lunchCustom', JSON.stringify(customMenus));
     document.getElementById('newMenuInput').value = '';
     currentCategory = '직접추가';
-    renderCategoryTabs();
-    renderMenuList();
-  }
-
-  /* ── 식당 직접 추가 ── */
-  function addRestaurant() {
-    const name = document.getElementById('rName').value.trim();
-    const cat  = document.getElementById('rCat').value;
-    const addr = document.getElementById('rAddr').value.trim();
-    const lat  = parseFloat(document.getElementById('rLat').value);
-    const lng  = parseFloat(document.getElementById('rLng').value);
-
-    if (!name || !addr || isNaN(lat) || isNaN(lng)) {
-      alert('이름, 주소, 위도, 경도를 모두 입력해주세요!');
-      return;
-    }
-
-    const EMOJI_MAP = {한식:'🍲',중식:'🍜',일식:'🍣',양식:'🍝',분식:'🍢',기타:'🍴'};
-    customRests.push({name, cat, addr, lat, lng, emoji: EMOJI_MAP[cat]||'🍴'});
-    localStorage.setItem('lunchRests', JSON.stringify(customRests));
-
-    ['rName','rAddr','rLat','rLng'].forEach(id => document.getElementById(id).value = '');
-    renderCustomRestaurantTags();
-    alert(`"${name}" 추가됐어요!`);
-  }
-
-  function renderCustomRestaurantTags() {
-    document.getElementById('customRestaurantTags').innerHTML = customRests.map((r,i) =>
-      `<span class="restaurant-tag">
-        ${r.emoji} ${r.name}
-        <span class="del-btn" onclick="deleteRestaurant(${i})">✖</span>
-      </span>`
-    ).join('');
-  }
-
-  function deleteRestaurant(i) {
-    customRests.splice(i, 1);
-    localStorage.setItem('lunchRests', JSON.stringify(customRests));
-    renderCustomRestaurantTags();
+    renderCategoryTabs(); renderMenuList();
   }
 
   /* ── 초기화 ── */
-  renderResultBoxes();
+  updateLocationUI();
   renderCategoryTabs();
   renderMenuList();
-  renderCustomRestaurantTags();
-  updateLocationUI();
 </script>
 </body>
 </html>
