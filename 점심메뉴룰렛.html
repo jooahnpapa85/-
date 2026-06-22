@@ -282,12 +282,13 @@
 
 <script>
   /* ── 카테고리 설정 ── */
+  // 각 카테고리별 검색 키워드 목록 (여러 개를 병렬 검색해서 결과 합산)
   const CAT_KEYWORDS = {
-    '전체': '맛집',
-    '한식': '한식',
-    '중식': '중식',
-    '양식': '양식 레스토랑',
-    '아시안': '아시안 태국 베트남 일식',
+    '전체': ['한식', '중식', '일식', '양식', '분식'],
+    '한식': ['한식', '순대국밥', '삼겹살', '갈비', '설렁탕', '국밥', '찌개', '삼계탕'],
+    '중식': ['중식', '중국집', '짜장면', '짬뽕', '탕수육', '마라탕', '양꼬치'],
+    '양식': ['햄버거', '피자', '파스타', '스테이크', '양식', '브런치', '샌드위치'],
+    '아시안': ['쌀국수', '태국음식', '베트남음식', '팟타이', '쌀국수전문', '동남아음식', '일식'],
   };
   const CAT_EMOJIS = { '전체':'🍽️', '한식':'🍲', '중식':'🥡', '양식':'🍝', '아시안':'🍜' };
   const SPIN_EMOJIS = ['🍜','🍣','🍕','🥩','🍱','🌮','🥘','🍛','🍔','🥗'];
@@ -391,22 +392,35 @@
       btn.textContent = ['🎰 오늘은...','🎰 여기...','🎰 다!!','🎰 오늘은...'][tick % 4];
     }, 150);
 
-    // 카카오 검색
+    // 카카오 검색 — 카테고리별 키워드 여러 개를 병렬 검색 후 합산
     const base = getBase();
-    const keyword = CAT_KEYWORDS[selectedCat];
+    const keywords = CAT_KEYWORDS[selectedCat];
     const ps = new kakao.maps.services.Places();
+    const opts = {
+      location: new kakao.maps.LatLng(base.lat, base.lng),
+      radius: 1000,
+      sort: kakao.maps.services.SortBy.DISTANCE
+    };
 
-    ps.keywordSearch(keyword, (data, status) => {
+    // 키워드 하나씩 검색하는 Promise 래퍼
+    function searchOne(kw) {
+      return new Promise(resolve => {
+        ps.keywordSearch(kw, (data, status) => {
+          resolve(status === kakao.maps.services.Status.OK ? data : []);
+        }, opts);
+      });
+    }
+
+    // 모든 키워드 검색 완료 후 처리
+    Promise.all(keywords.map(kw => searchOne(kw))).then(results => {
       clearInterval(anim);
       document.getElementById('resultName').classList.remove('spinning');
 
-      if (status !== kakao.maps.services.Status.OK || !data.length) {
-        showError('주변에 검색 결과가 없어요 😢\n위치 설정을 확인해주세요.');
-        return;
-      }
-
-      // 거리 필터 (1km)
-      const nearby = data.filter(p => {
+      // 중복 제거 (id 기준) 후 1km 이내 필터
+      const seen = new Set();
+      const nearby = results.flat().filter(p => {
+        if (seen.has(p.id)) return false;
+        seen.add(p.id);
         const d = calcDist(base.lat, base.lng, parseFloat(p.y), parseFloat(p.x));
         return d * 1000 <= 1000;
       });
@@ -421,10 +435,6 @@
       const dist = calcDist(base.lat, base.lng, parseFloat(picked.y), parseFloat(picked.x));
 
       showResult(picked, dist);
-    }, {
-      location: new kakao.maps.LatLng(base.lat, base.lng),
-      radius: 1000,
-      sort: kakao.maps.services.SortBy.DISTANCE
     });
   }
 
