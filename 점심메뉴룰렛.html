@@ -250,6 +250,84 @@
 
     .footer { color: rgba(255,180,100,0.5); font-size: 0.78rem; margin-top: 16px; }
 
+    /* 위치 설정 카드 */
+    .location-card {
+      background: white;
+      border-radius: 24px;
+      padding: 22px 28px;
+      width: 100%;
+      max-width: 520px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+      margin-bottom: 20px;
+    }
+    .location-card h2 { font-size: 1rem; color: #444; margin-bottom: 14px; }
+
+    .location-status {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      background: #f9f9f9;
+      margin-bottom: 14px;
+      font-size: 0.88rem;
+    }
+    .location-status.set   { background: #fff3ec; }
+    .location-status .dot  { width: 10px; height: 10px; border-radius: 50%; background: #ccc; flex-shrink: 0; }
+    .location-status.set .dot { background: #ff6a00; }
+    .location-status .loc-text { flex: 1; color: #555; }
+    .location-status.set .loc-text { color: #c04000; font-weight: 600; }
+
+    .location-btns { display: flex; gap: 8px; margin-bottom: 12px; }
+    .loc-btn {
+      flex: 1;
+      padding: 10px;
+      border: 1.5px solid #e0e0e0;
+      border-radius: 12px;
+      background: white;
+      font-size: 0.85rem;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+      color: #555;
+      transition: all 0.2s;
+    }
+    .loc-btn.primary { background: #ff6a00; color: white; border-color: #ff6a00; }
+    .loc-btn.primary:hover { background: #d95500; }
+    .loc-btn:hover:not(.primary) { border-color: #ff6a00; color: #ff6a00; }
+
+    .location-manual {
+      display: none;
+      gap: 8px;
+      flex-direction: column;
+    }
+    .location-manual.open { display: flex; }
+    .location-manual input {
+      padding: 9px 12px;
+      border: 1.5px solid #e0e0e0;
+      border-radius: 10px;
+      font-size: 0.85rem;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .location-manual input:focus { border-color: #ff6a00; }
+    .location-manual .manual-row { display: flex; gap: 8px; }
+    .location-manual .manual-row input { flex: 1; }
+    .location-manual .save-loc-btn {
+      padding: 9px;
+      background: #ff6a00;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+      transition: background 0.2s;
+    }
+    .location-manual .save-loc-btn:hover { background: #d95500; }
+
     /* 식당 추가 섹션 */
     .section-divider {
       border: none;
@@ -329,7 +407,30 @@
   <div class="bg-food" style="left:90%;animation-duration:17s;animation-delay:4s">🍔</div>
 
   <h1>🍽️ 점심 메뉴 룰렛</h1>
-  <p class="subtitle">매봉역 맛집 지도와 함께!</p>
+  <p class="subtitle" id="mainSubtitle">내 위치 기준 맛집 지도!</p>
+
+  <!-- 위치 설정 카드 -->
+  <div class="location-card">
+    <h2>📍 내 위치 설정</h2>
+    <div class="location-status" id="locationStatus">
+      <div class="dot"></div>
+      <div class="loc-text" id="locationText">위치가 설정되지 않았어요</div>
+    </div>
+    <div class="location-btns">
+      <button class="loc-btn primary" onclick="getGPS()">🛰️ GPS로 자동 설정</button>
+      <button class="loc-btn" onclick="toggleManual()">✏️ 직접 입력</button>
+      <button class="loc-btn" onclick="resetLocation()" id="resetBtn" style="display:none">🔄 초기화</button>
+    </div>
+    <div class="location-manual" id="manualForm">
+      <input id="locLabel" placeholder="장소 이름 (예: 우리 사무실, 강남역)" maxlength="20">
+      <div class="manual-row">
+        <input id="locLat" placeholder="위도 (예: 37.4849)" type="number" step="0.0001">
+        <input id="locLng" placeholder="경도 (예: 127.0338)" type="number" step="0.0001">
+      </div>
+      <small style="color:#bbb;font-size:0.75rem">💡 네이버지도에서 원하는 곳 우클릭 → "이곳이 궁금해요" 하면 좌표가 나와요</small>
+      <button class="save-loc-btn" onclick="saveManualLocation()">✔ 이 위치로 저장</button>
+    </div>
+  </div>
 
   <!-- 룰렛 카드 -->
   <div class="card">
@@ -432,8 +533,77 @@
   };
 
   const EMOJIS = ["🎉","✨","🔥","💥","⭐","🌟","🎊","💫"];
-  // 매봉역 좌표
-  const MAEBONG = [37.4849, 127.0338];
+
+  /* ── 위치 관리 ── */
+  let userLocation = JSON.parse(localStorage.getItem('userLocation') || 'null');
+
+  function getBaseLocation() {
+    return userLocation ? [userLocation.lat, userLocation.lng] : [37.4849, 127.0338];
+  }
+
+  function updateLocationUI() {
+    const status = document.getElementById('locationStatus');
+    const text   = document.getElementById('locationText');
+    const resetBtn = document.getElementById('resetBtn');
+    if (userLocation) {
+      status.classList.add('set');
+      text.textContent = `📍 ${userLocation.label} (${userLocation.lat.toFixed(4)}, ${userLocation.lng.toFixed(4)})`;
+      resetBtn.style.display = '';
+      document.getElementById('mainSubtitle').textContent = `${userLocation.label} 기준 맛집 지도!`;
+    } else {
+      status.classList.remove('set');
+      text.textContent = '위치가 설정되지 않았어요 (기본: 매봉역)';
+      resetBtn.style.display = 'none';
+      document.getElementById('mainSubtitle').textContent = '내 위치 기준 맛집 지도!';
+    }
+  }
+
+  function getGPS() {
+    if (!navigator.geolocation) { alert('이 브라우저는 GPS를 지원하지 않아요.'); return; }
+    const btn = document.querySelector('.loc-btn.primary');
+    btn.textContent = '📡 위치 찾는 중...';
+    btn.disabled = true;
+    navigator.geolocation.getCurrentPosition(
+      pos => {
+        const label = prompt('이 위치의 이름을 입력해주세요 (예: 우리 사무실)', '우리 사무실') || '내 위치';
+        userLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude, label };
+        localStorage.setItem('userLocation', JSON.stringify(userLocation));
+        btn.textContent = '🛰️ GPS로 자동 설정';
+        btn.disabled = false;
+        updateLocationUI();
+        if (leafletMap) { leafletMap.setView([userLocation.lat, userLocation.lng], 15); }
+      },
+      () => {
+        alert('위치를 가져오지 못했어요.\n브라우저 위치 권한을 허용해주세요.');
+        btn.textContent = '🛰️ GPS로 자동 설정';
+        btn.disabled = false;
+      }
+    );
+  }
+
+  function toggleManual() {
+    const form = document.getElementById('manualForm');
+    form.classList.toggle('open');
+  }
+
+  function saveManualLocation() {
+    const label = document.getElementById('locLabel').value.trim() || '내 위치';
+    const lat   = parseFloat(document.getElementById('locLat').value);
+    const lng   = parseFloat(document.getElementById('locLng').value);
+    if (isNaN(lat) || isNaN(lng)) { alert('위도와 경도를 입력해주세요!'); return; }
+    userLocation = { lat, lng, label };
+    localStorage.setItem('userLocation', JSON.stringify(userLocation));
+    document.getElementById('manualForm').classList.remove('open');
+    updateLocationUI();
+    if (leafletMap) { leafletMap.setView([lat, lng], 15); }
+  }
+
+  function resetLocation() {
+    if (!confirm('위치 설정을 초기화할까요?')) return;
+    userLocation = null;
+    localStorage.removeItem('userLocation');
+    updateLocationUI();
+  }
 
   let currentCategory = "한식";
   let customMenus   = JSON.parse(localStorage.getItem('lunchCustom') || '[]');
@@ -517,44 +687,40 @@
 
   /* ── 지도 표시 ── */
   function showMap(pickedMenu) {
+    const base = getBaseLocation();
+    const locLabel = userLocation ? userLocation.label : '매봉역';
     const cat = menuToCategory(pickedMenu);
     const allRests = [...BASE_RESTAURANTS, ...customRests];
-    const filtered = cat
-      ? allRests.filter(r => r.cat === cat)
-      : allRests;
+    const filtered = cat ? allRests.filter(r => r.cat === cat) : allRests;
 
-    // 거리 정렬
     const sorted = filtered
-      .map(r => ({...r, dist: calcDist(MAEBONG[0], MAEBONG[1], r.lat, r.lng)}))
+      .map(r => ({...r, dist: calcDist(base[0], base[1], r.lat, r.lng)}))
       .sort((a,b) => a.dist - b.dist);
 
     const mapCard = document.getElementById('mapCard');
     mapCard.classList.add('visible');
     document.getElementById('mapTitle').textContent = `📍 ${pickedMenu} 주변 식당`;
-    document.getElementById('mapSubtitle').textContent = `매봉역 기준 ${sorted.length}곳`;
+    document.getElementById('mapSubtitle').textContent = `${locLabel} 기준 ${sorted.length}곳`;
 
-    // 지도 초기화
     if (!leafletMap) {
-      leafletMap = L.map('map').setView(MAEBONG, 15);
+      leafletMap = L.map('map').setView(base, 15);
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '© OpenStreetMap'
       }).addTo(leafletMap);
     } else {
-      leafletMap.setView(MAEBONG, 15);
+      leafletMap.setView(base, 15);
     }
 
-    // 기존 마커 제거
     markers.forEach(m => m.remove());
     markers = [];
 
-    // 내 위치 (매봉역) 마커
     const officeIcon = L.divIcon({
       html: '<div style="background:#ff6a00;border:3px solid white;border-radius:50%;width:18px;height:18px;box-shadow:0 2px 8px rgba(0,0,0,0.4)"></div>',
       iconSize: [18, 18], iconAnchor: [9, 9]
     });
-    const officeMarker = L.marker(MAEBONG, {icon: officeIcon})
+    const officeMarker = L.marker(base, {icon: officeIcon})
       .addTo(leafletMap)
-      .bindPopup('<b>📍 매봉역 (내 위치)</b>');
+      .bindPopup(`<b>📍 ${locLabel} (내 위치)</b>`);
     markers.push(officeMarker);
 
     // 식당 마커
@@ -685,6 +851,7 @@
   renderCategoryTabs();
   renderMenuList();
   renderCustomRestaurantTags();
+  updateLocationUI();
 </script>
 </body>
 </html>
