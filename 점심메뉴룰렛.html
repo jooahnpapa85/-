@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>점심 메뉴 룰렛 🍽️</title>
-  <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=9284ebd12f81855d710ebbca3be4ec7e&libraries=services"></script>
+  <title>오늘은 여기다!! 🍽️</title>
+  <script src="//dapi.kakao.com/v2/maps/sdk.js?appkey=9284ebd12f81855d710ebbca3be4ec7e&libraries=services"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body { max-width: 100%; overflow-x: hidden; }
@@ -20,306 +20,311 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 24px 14px 50px;
+      padding: 28px 14px 60px;
       position: relative;
       overflow-x: hidden;
-      width: 100%;
     }
 
+    /* 배경 이모지 */
     .bg-food {
-      position: fixed; font-size: 2rem; opacity: 0.07;
+      position: fixed; font-size: 2rem; opacity: 0.06;
       pointer-events: none; animation: float linear infinite; z-index: 0;
     }
     @keyframes float {
       0%   { transform: translateY(110vh) rotate(0deg); opacity: 0; }
-      10%  { opacity: 0.07; } 90% { opacity: 0.07; }
+      10%  { opacity: 0.06; } 90% { opacity: 0.06; }
       100% { transform: translateY(-10vh) rotate(360deg); opacity: 0; }
     }
     body > *:not(.bg-food) { position: relative; z-index: 1; }
 
-    h1 { color: #fff8f0; font-size: 1.8rem; margin-bottom: 6px; text-shadow: 0 2px 16px rgba(255,100,0,0.5); }
-    .subtitle { color: rgba(255,210,160,0.85); margin-bottom: 24px; font-size: 0.9rem; }
+    /* 헤더 */
+    .header { text-align: center; margin-bottom: 24px; }
+    .header h1 { color: #fff8f0; font-size: 1.9rem; text-shadow: 0 2px 16px rgba(255,100,0,0.5); margin-bottom: 4px; }
+    .header p  { color: rgba(255,210,160,0.75); font-size: 0.88rem; }
 
     /* 공통 카드 */
-    .card, .map-card, .menu-card, .location-card {
-      background: white; border-radius: 22px; width: 100%; max-width: 520px;
-      box-shadow: 0 16px 48px rgba(0,0,0,0.28); margin-bottom: 18px;
+    .card {
+      background: white; border-radius: 22px; width: 100%; max-width: 500px;
+      box-shadow: 0 16px 48px rgba(0,0,0,0.3); margin-bottom: 16px;
     }
-    .card, .menu-card, .location-card { padding: 22px 18px; }
 
-    /* 위치 설정 */
-    .location-card h2 { font-size: 0.95rem; color: #444; margin-bottom: 12px; }
-    .location-status {
-      display: flex; align-items: center; gap: 10px;
-      padding: 11px 13px; border-radius: 11px; background: #f9f9f9; margin-bottom: 12px;
+    /* 위치 설정 카드 */
+    .loc-card { padding: 18px; }
+    .loc-card-title { font-size: 0.82rem; color: #aaa; font-weight: 600; margin-bottom: 10px; letter-spacing: 0.04em; }
+    .loc-status {
+      display: flex; align-items: center; gap: 9px;
+      padding: 10px 12px; border-radius: 11px; background: #f9f9f9; margin-bottom: 10px;
     }
-    .location-status.set { background: #fff3ec; }
-    .location-status .dot { width: 9px; height: 9px; border-radius: 50%; background: #ccc; flex-shrink: 0; }
-    .location-status.set .dot { background: #ff6a00; }
-    .location-status .loc-text { flex: 1; font-size: 0.85rem; color: #555; }
-    .location-status.set .loc-text { color: #c04000; font-weight: 600; }
+    .loc-status.set { background: #fff3ec; }
+    .loc-dot { width: 8px; height: 8px; border-radius: 50%; background: #ddd; flex-shrink: 0; }
+    .loc-status.set .loc-dot { background: #ff6a00; }
+    .loc-text { flex: 1; font-size: 0.82rem; color: #888; }
+    .loc-status.set .loc-text { color: #c04000; font-weight: 600; }
 
-    .location-btns { display: flex; gap: 7px; margin-bottom: 10px; flex-wrap: wrap; }
+    .loc-btns { display: flex; gap: 7px; }
     .loc-btn {
-      flex: 1; min-width: 80px; padding: 9px 6px; border: 1.5px solid #e0e0e0;
-      border-radius: 11px; background: white; font-size: 0.8rem; font-weight: 700;
-      cursor: pointer; font-family: inherit; color: #555; transition: all 0.2s;
+      flex: 1; padding: 8px 6px; border: 1.5px solid #e8e8e8;
+      border-radius: 10px; background: white; font-size: 0.78rem; font-weight: 700;
+      cursor: pointer; font-family: inherit; color: #666; transition: all 0.2s;
     }
     .loc-btn.primary { background: #ff6a00; color: white; border-color: #ff6a00; }
     .loc-btn.primary:hover { background: #d95500; }
     .loc-btn:hover:not(.primary) { border-color: #ff6a00; color: #ff6a00; }
 
-    .location-manual { display: none; flex-direction: column; gap: 7px; margin-top: 4px; }
-    .location-manual.open { display: flex; }
-    .location-manual input {
+    .loc-manual { display: none; flex-direction: column; gap: 7px; margin-top: 10px; }
+    .loc-manual.open { display: flex; }
+    .loc-manual input {
       padding: 9px 11px; border: 1.5px solid #e0e0e0; border-radius: 10px;
-      font-size: 0.85rem; font-family: inherit; outline: none; width: 100%;
+      font-size: 0.84rem; font-family: inherit; outline: none; width: 100%;
     }
-    .location-manual input:focus { border-color: #ff6a00; }
+    .loc-manual input:focus { border-color: #ff6a00; }
     .manual-row { display: flex; gap: 7px; }
     .manual-row input { flex: 1; min-width: 0; }
+    .loc-hint { font-size: 0.7rem; color: #ccc; line-height: 1.5; }
     .save-loc-btn {
       padding: 9px; background: #ff6a00; color: white; border: none;
-      border-radius: 10px; font-size: 0.85rem; font-weight: 700;
-      cursor: pointer; font-family: inherit;
-    }
-    .loc-hint { font-size: 0.72rem; color: #bbb; line-height: 1.4; }
-
-    /* 룰렛 결과 */
-    .roulette-area { text-align: center; margin-bottom: 20px; }
-    .result-box {
-      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-      border-radius: 18px; padding: 22px 16px; width: 100%;
-      box-shadow: 0 6px 20px rgba(240,147,251,0.35);
-    }
-    .result-box .person-label { font-size: 0.75rem; color: rgba(255,255,255,0.85); margin-bottom: 5px; font-weight: 600; }
-    .result-box .menu-name {
-      font-size: 1.8rem; font-weight: 800; color: white;
-      text-shadow: 0 1px 4px rgba(0,0,0,0.15); min-height: 44px;
-      display: flex; align-items: center; justify-content: center;
-    }
-    .result-box .menu-emoji { font-size: 2.4rem; margin-bottom: 6px; }
-    .result-box.spinning .menu-name { animation: spin-text 0.1s infinite; }
-    @keyframes spin-text { 0%{opacity:1} 50%{opacity:0.3} 100%{opacity:1} }
-    .result-box.landed { animation: bounce 0.5s ease; }
-    @keyframes bounce {
-      0%{transform:scale(1)} 40%{transform:scale(1.1)} 70%{transform:scale(0.96)} 100%{transform:scale(1)}
+      border-radius: 10px; font-size: 0.84rem; font-weight: 700; cursor: pointer; font-family: inherit;
     }
 
-    /* 뽑기 버튼 */
+    /* 메인 룰렛 카드 */
+    .main-card { padding: 24px 18px; }
+
+    /* 카테고리 탭 */
+    .cat-label { font-size: 0.78rem; color: #bbb; font-weight: 600; margin-bottom: 10px; letter-spacing: 0.04em; }
+    .cat-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 22px; }
+    .cat-tab {
+      padding: 7px 14px; border-radius: 20px; border: 2px solid #eee;
+      font-size: 0.84rem; cursor: pointer; font-family: inherit;
+      font-weight: 700; transition: all 0.18s; background: white; color: #999;
+    }
+    .cat-tab:hover { border-color: #ffb380; color: #ff6a00; }
+    .cat-tab.active { background: #ff6a00; color: white; border-color: #ff6a00; box-shadow: 0 3px 12px rgba(255,106,0,0.35); }
+
+    /* 결과 표시 영역 */
+    .result-area {
+      background: linear-gradient(135deg, #1a0a00 0%, #3d1500 100%);
+      border-radius: 18px; padding: 28px 20px; text-align: center;
+      margin-bottom: 20px; min-height: 160px;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      position: relative; overflow: hidden;
+    }
+    .result-area::before {
+      content: ''; position: absolute; inset: 0;
+      background: radial-gradient(ellipse at center, rgba(255,106,0,0.12) 0%, transparent 70%);
+    }
+
+    .result-emoji { font-size: 3rem; margin-bottom: 8px; transition: all 0.1s; }
+
+    .result-label { font-size: 0.72rem; color: rgba(255,180,100,0.6); font-weight: 600; letter-spacing: 0.08em; margin-bottom: 6px; }
+
+    .result-name {
+      font-size: 1.6rem; font-weight: 800; color: white;
+      text-shadow: 0 2px 12px rgba(255,106,0,0.5);
+      min-height: 44px; display: flex; align-items: center; justify-content: center;
+      line-height: 1.2; word-break: keep-all; text-align: center;
+    }
+    .result-name.spinning { animation: flicker 0.08s infinite; }
+    @keyframes flicker { 0%{opacity:1} 50%{opacity:0.4} 100%{opacity:1} }
+
+    .result-category {
+      font-size: 0.78rem; color: rgba(255,180,100,0.7); margin-top: 6px;
+      font-weight: 600;
+    }
+    .result-addr {
+      font-size: 0.75rem; color: rgba(255,255,255,0.4); margin-top: 4px;
+    }
+
+    .result-area.landed {
+      animation: pop 0.5s ease;
+    }
+    @keyframes pop {
+      0%  { transform: scale(1); }
+      35% { transform: scale(1.04); }
+      65% { transform: scale(0.97); }
+      100%{ transform: scale(1); }
+    }
+
+    /* 메인 버튼 */
     .spin-btn {
-      width: 100%; padding: 17px;
+      width: 100%;
+      padding: 20px;
       background: linear-gradient(135deg, #ff6a00 0%, #ee0979 100%);
-      color: white; border: none; border-radius: 15px; font-size: 1.15rem;
-      font-weight: 800; cursor: pointer; font-family: inherit;
-      box-shadow: 0 6px 24px rgba(255,80,0,0.45); transition: all 0.2s;
+      color: white; border: none; border-radius: 16px;
+      font-size: 1.3rem; font-weight: 900; cursor: pointer; font-family: inherit;
+      box-shadow: 0 8px 28px rgba(255,80,0,0.5);
+      transition: all 0.2s; letter-spacing: -0.02em;
     }
-    .spin-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 32px rgba(255,80,0,0.55); }
-    .spin-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+    .spin-btn:hover { transform: translateY(-3px); box-shadow: 0 14px 36px rgba(255,80,0,0.6); }
+    .spin-btn:active { transform: translateY(0); }
+    .spin-btn:disabled { opacity: 0.55; cursor: not-allowed; transform: none; box-shadow: none; }
 
     /* 지도 카드 */
     .map-card { display: none; overflow: hidden; }
     .map-card.visible { display: block; }
-    .map-header { padding: 16px 18px 12px; border-bottom: 1px solid #f0f0f0; }
-    .map-header h2 { font-size: 0.95rem; color: #333; margin-bottom: 3px; }
-    .map-header p  { font-size: 0.78rem; color: #999; }
-    #kakaoMap { width: 100%; height: 300px; }
 
-    /* 반경 고정 안내 */
-    .radius-bar {
-      padding: 8px 18px; background: #fff8f3; border-bottom: 1px solid #ffe8d6;
-      font-size: 0.78rem; color: #c04000; font-weight: 600;
+    .map-header { padding: 14px 18px 10px; border-bottom: 1px solid #f5f5f5; }
+    .map-header h2 { font-size: 0.95rem; color: #222; font-weight: 800; margin-bottom: 2px; }
+    .map-header p  { font-size: 0.75rem; color: #bbb; }
+
+    .map-badge {
+      display: inline-block; background: #fff3ec; color: #ff6a00;
+      font-size: 0.72rem; font-weight: 700; padding: 3px 9px;
+      border-radius: 10px; margin-top: 5px;
     }
 
-    /* 식당 목록 */
-    .restaurant-list { max-height: 280px; overflow-y: auto; }
-    .restaurant-item {
-      display: flex; align-items: center; gap: 12px;
-      padding: 12px 16px; border-bottom: 1px solid #fafafa;
-      cursor: pointer; transition: background 0.15s;
-    }
-    .restaurant-item:hover { background: #fff8f3; }
-    .restaurant-item:last-child { border-bottom: none; }
-    .r-rank { font-size: 0.75rem; font-weight: 800; color: #ff6a00; min-width: 20px; }
-    .r-info { flex: 1; min-width: 0; }
-    .r-name { font-size: 0.9rem; font-weight: 700; color: #222; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .r-cat  { font-size: 0.72rem; color: #ff6a00; font-weight: 600; margin-top: 1px; }
-    .r-addr { font-size: 0.7rem; color: #bbb; margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .r-dist { font-size: 0.78rem; color: #999; min-width: 38px; text-align: right; flex-shrink: 0; }
-    .r-link { font-size: 0.7rem; color: #3498db; text-decoration: none; }
-    .r-link:hover { text-decoration: underline; }
+    #kakaoMap { width: 100%; height: 280px; }
 
-    .map-loading {
-      padding: 30px; text-align: center; color: #ccc; font-size: 0.88rem;
+    /* 식당 상세 */
+    .restaurant-detail {
+      padding: 16px 18px;
+      border-top: 1px solid #f5f5f5;
     }
-    .map-loading .spinner {
+    .detail-name { font-size: 1.1rem; font-weight: 800; color: #222; margin-bottom: 4px; }
+    .detail-cat  { font-size: 0.78rem; color: #ff6a00; font-weight: 600; margin-bottom: 6px; }
+    .detail-addr { font-size: 0.8rem; color: #888; margin-bottom: 12px; line-height: 1.5; }
+    .detail-actions { display: flex; gap: 8px; }
+    .detail-btn {
+      flex: 1; padding: 10px; border-radius: 11px; font-size: 0.84rem;
+      font-weight: 700; cursor: pointer; font-family: inherit; border: none;
+      transition: all 0.18s; text-align: center; text-decoration: none; display: block;
+    }
+    .detail-btn.kakao { background: #FEE500; color: #3C1E1E; }
+    .detail-btn.kakao:hover { background: #ffd900; }
+    .detail-btn.retry { background: #f5f5f5; color: #555; }
+    .detail-btn.retry:hover { background: #ebebeb; }
+
+    /* 로딩 */
+    .map-loading { padding: 28px; text-align: center; color: #ccc; font-size: 0.85rem; }
+    .spinner {
       display: inline-block; width: 22px; height: 22px;
       border: 3px solid #f0f0f0; border-top-color: #ff6a00;
       border-radius: 50%; animation: spin 0.8s linear infinite; margin-bottom: 8px;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* 메뉴 관리 */
-    .menu-card h2 { font-size: 0.95rem; color: #444; margin-bottom: 14px; }
-    .category-tabs { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 14px; }
-    .cat-tab {
-      padding: 5px 12px; border-radius: 18px; border: none;
-      font-size: 0.8rem; cursor: pointer; font-family: inherit;
-      font-weight: 600; transition: all 0.2s; background: #f0f0f0; color: #666;
-    }
-    .cat-tab.active { background: #ff6a00; color: white; }
-    .menu-list { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 14px; min-height: 44px; }
-    .menu-tag {
-      display: flex; align-items: center; gap: 4px; background: #fff3ec;
-      border: 1.5px solid #ffd0b0; border-radius: 18px; padding: 5px 11px;
-      font-size: 0.84rem; color: #c04000; font-weight: 600; transition: all 0.2s;
-    }
-    .menu-tag.excluded { background: #f5f5f5; border-color: #ddd; color: #bbb; text-decoration: line-through; }
-    .menu-tag .tag-toggle { cursor: pointer; font-size: 0.7rem; opacity: 0.5; }
-    .menu-tag .tag-toggle:hover { opacity: 1; }
-    .add-menu-row { display: flex; gap: 7px; }
-    .add-menu-input {
-      flex: 1; min-width: 0; padding: 9px 12px; border: 1.5px solid #e0e0e0;
-      border-radius: 11px; font-size: 0.88rem; font-family: inherit; outline: none;
-    }
-    .add-menu-input:focus { border-color: #ff6a00; }
-    .add-btn {
-      padding: 9px 16px; background: #ff6a00; color: white; border: none;
-      border-radius: 11px; font-size: 0.88rem; font-weight: 700; cursor: pointer; font-family: inherit;
-    }
-    .menu-count { font-size: 0.74rem; color: #bbb; margin-top: 7px; }
-    .section-divider { border: none; border-top: 1px solid #f0f0f0; margin: 18px 0; }
-
-    .footer { color: rgba(255,180,100,0.45); font-size: 0.74rem; margin-top: 14px; text-align: center; }
+    .footer { color: rgba(255,180,100,0.35); font-size: 0.72rem; margin-top: 14px; text-align: center; }
   </style>
 </head>
 <body>
 
   <div class="bg-food" style="left:5%;animation-duration:14s;animation-delay:0s">🍜</div>
-  <div class="bg-food" style="left:20%;animation-duration:18s;animation-delay:3s">🍣</div>
-  <div class="bg-food" style="left:40%;animation-duration:12s;animation-delay:1s;font-size:1.5rem">🍕</div>
-  <div class="bg-food" style="left:60%;animation-duration:16s;animation-delay:5s;font-size:2.5rem">🥩</div>
-  <div class="bg-food" style="left:80%;animation-duration:20s;animation-delay:2s">🍱</div>
+  <div class="bg-food" style="left:22%;animation-duration:18s;animation-delay:3s">🍣</div>
+  <div class="bg-food" style="left:44%;animation-duration:12s;animation-delay:1s;font-size:1.6rem">🍕</div>
+  <div class="bg-food" style="left:65%;animation-duration:16s;animation-delay:5s;font-size:2.5rem">🥩</div>
+  <div class="bg-food" style="left:84%;animation-duration:20s;animation-delay:2s">🍱</div>
 
-  <h1>🍽️ 점심 메뉴 룰렛</h1>
-  <p class="subtitle" id="mainSubtitle">카카오맵 실시간 맛집 연동!</p>
+  <div class="header">
+    <h1>🍽️ 오늘은 여기다!!</h1>
+    <p id="headerSub">내 위치 기준 1km 이내 맛집 랜덤 추천</p>
+  </div>
 
-  <!-- 위치 설정 -->
-  <div class="location-card">
-    <h2>📍 내 위치 설정</h2>
-    <div class="location-status" id="locationStatus">
-      <div class="dot"></div>
-      <div class="loc-text" id="locationText">위치 미설정 (기본: 매봉역)</div>
+  <!-- 위치 카드 -->
+  <div class="card loc-card">
+    <div class="loc-card-title">📍 내 위치</div>
+    <div class="loc-status" id="locStatus">
+      <div class="loc-dot"></div>
+      <div class="loc-text" id="locText">위치 미설정 — 설정하면 더 정확해요</div>
     </div>
-    <div class="location-btns">
+    <div class="loc-btns">
       <button class="loc-btn primary" onclick="getGPS()">🛰️ GPS 자동설정</button>
       <button class="loc-btn" onclick="toggleManual()">✏️ 직접 입력</button>
-      <button class="loc-btn" onclick="resetLocation()" id="resetBtn" style="display:none">🔄 초기화</button>
+      <button class="loc-btn" onclick="resetLoc()" id="resetBtn" style="display:none">🔄 초기화</button>
     </div>
-    <div class="location-manual" id="manualForm">
+    <div class="loc-manual" id="manualForm">
       <input id="locLabel" placeholder="장소 이름 (예: 우리 사무실)" maxlength="20">
       <div class="manual-row">
         <input id="locLat" placeholder="위도 (예: 37.4849)" type="number" step="0.0001">
         <input id="locLng" placeholder="경도 (예: 127.0338)" type="number" step="0.0001">
       </div>
       <p class="loc-hint">💡 카카오맵에서 원하는 위치 길게 누르면 좌표가 나와요</p>
-      <button class="save-loc-btn" onclick="saveManualLocation()">✔ 이 위치로 저장</button>
+      <button class="save-loc-btn" onclick="saveManual()">✔ 저장</button>
     </div>
   </div>
 
-  <!-- 룰렛 -->
-  <div class="card">
-    <div class="roulette-area">
-      <div class="result-box" id="box0">
-        <div class="menu-emoji" id="emoji0">🎯</div>
-        <div class="person-label">오늘의 메뉴</div>
-        <div class="menu-name" id="menu0">?</div>
-      </div>
+  <!-- 메인 카드 -->
+  <div class="card main-card">
+    <div class="cat-label">카테고리 선택</div>
+    <div class="cat-tabs">
+      <button class="cat-tab active" onclick="selectCat(this,'전체')">🍽️ 전체</button>
+      <button class="cat-tab" onclick="selectCat(this,'한식')">🍲 한식</button>
+      <button class="cat-tab" onclick="selectCat(this,'중식')">🥡 중식</button>
+      <button class="cat-tab" onclick="selectCat(this,'양식')">🍝 양식</button>
+      <button class="cat-tab" onclick="selectCat(this,'아시안')">🍜 아시안</button>
     </div>
-    <button class="spin-btn" id="spinBtn" onclick="spin()">🎰 메뉴 뽑기!</button>
+
+    <div class="result-area" id="resultArea">
+      <div class="result-emoji" id="resultEmoji">🎯</div>
+      <div class="result-label">오늘의 맛집</div>
+      <div class="result-name" id="resultName">버튼을 눌러보세요!</div>
+      <div class="result-category" id="resultCat"></div>
+      <div class="result-addr" id="resultAddr"></div>
+    </div>
+
+    <button class="spin-btn" id="spinBtn" onclick="pickRestaurant()">
+      🎰 오늘은 여기다!!
+    </button>
   </div>
 
-  <!-- 지도 -->
-  <div class="map-card" id="mapCard">
+  <!-- 지도 카드 -->
+  <div class="card map-card" id="mapCard">
     <div class="map-header">
-      <h2 id="mapTitle">📍 주변 맛집</h2>
-      <p id="mapSubtitle">카카오맵 실시간 검색</p>
+      <h2 id="mapRestName">맛집 이름</h2>
+      <p id="mapRestCat"></p>
+      <span class="map-badge" id="mapDist"></span>
     </div>
-    <div class="radius-bar">📍 내 위치 기준 반경 1km 이내 맛집</div>
     <div id="kakaoMap"></div>
-    <div class="restaurant-list" id="restaurantList">
-      <div class="map-loading">
-        <div class="spinner"></div><br>맛집 검색 중...
-      </div>
+    <div id="mapContent">
+      <div class="map-loading"><div class="spinner"></div><br>지도 불러오는 중...</div>
     </div>
   </div>
 
-  <!-- 메뉴 관리 -->
-  <div class="menu-card">
-    <h2>📋 메뉴 목록 관리</h2>
-    <div class="category-tabs" id="categoryTabs"></div>
-    <div class="menu-list" id="menuList"></div>
-    <div class="menu-count" id="menuCount"></div>
-    <div class="add-menu-row">
-      <input class="add-menu-input" id="newMenuInput" placeholder="메뉴 직접 추가..." maxlength="15"
-             onkeydown="if(event.key==='Enter')addMenu()">
-      <button class="add-btn" onclick="addMenu()">추가</button>
-    </div>
-  </div>
-
-  <p class="footer">카카오맵 실시간 검색 · 반경 조절 가능 · 메뉴 태그 ✖ = 오늘 제외</p>
+  <p class="footer">카카오맵 실시간 데이터 · 반경 1km 이내 · 매번 다른 곳 추천</p>
 
 <script>
-  /* ── 메뉴 데이터 ── */
+  /* ── 카테고리 설정 ── */
   const CAT_KEYWORDS = {
-    "한식": ["김치찌개","된장찌개","순두부찌개","비빔밥","불고기","삼겹살","냉면","국밥","곱창","쌈밥","갈비탕","설렁탕","닭갈비","제육볶음","보쌈"],
-    "중식": ["짜장면","짬뽕","탕수육","마라탕","양꼬치","볶음밥","훠궈","딤섬"],
-    "일식": ["라멘","초밥","우동","돈카츠","규동","오야코동","텐동","소바","야키니쿠"],
-    "양식": ["파스타","피자","버거","샌드위치","스테이크","샐러드","리조또","타코"],
-    "분식": ["떡볶이","순대","김밥","라면","튀김","쫄면","만두","어묵"],
+    '전체': '맛집',
+    '한식': '한식',
+    '중식': '중식',
+    '양식': '양식 레스토랑',
+    '아시안': '아시안 태국 베트남 일식',
   };
-  const MENUS = Object.fromEntries(
-    Object.entries(CAT_KEYWORDS).map(([k,v]) => [k, v.map(n => ({name:n}))])
-  );
-  const EMOJIS = ["🎉","✨","🔥","💥","⭐","🌟","🎊","💫"];
-  const CAT_EMOJI = {한식:"🍲",중식:"🍜",일식:"🍣",양식:"🍝",분식:"🍢"};
+  const CAT_EMOJIS = { '전체':'🍽️', '한식':'🍲', '중식':'🥡', '양식':'🍝', '아시안':'🍜' };
+  const SPIN_EMOJIS = ['🍜','🍣','🍕','🥩','🍱','🌮','🥘','🍛','🍔','🥗'];
 
-  /* 카카오 카테고리 → 음식 검색 키워드 매핑 */
-  const CAT_SEARCH = {
-    "한식": "한식",
-    "중식": "중식",
-    "일식": "일식 일본음식",
-    "양식": "양식 이탈리안 패스트푸드",
-    "분식": "분식",
-  };
+  let selectedCat = '전체';
+  let kakaoMap = null;
+  let currentMarker = null;
+  let spinning = false;
 
   /* ── 위치 ── */
-  const DEFAULT_LOC = { lat: 37.4849, lng: 127.0338, label: '매봉역' };
-  let userLocation = JSON.parse(localStorage.getItem('userLocation') || 'null');
-  function getBase() { return userLocation || DEFAULT_LOC; }
+  const DEFAULT = { lat: 37.4849, lng: 127.0338, label: '매봉역' };
+  let userLoc = JSON.parse(localStorage.getItem('userLoc') || 'null');
 
-  function updateLocationUI() {
-    const st = document.getElementById('locationStatus');
-    const tx = document.getElementById('locationText');
+  function getBase() { return userLoc || DEFAULT; }
+
+  function updateLocUI() {
+    const st = document.getElementById('locStatus');
+    const tx = document.getElementById('locText');
     const rb = document.getElementById('resetBtn');
-    if (userLocation) {
+    if (userLoc) {
       st.classList.add('set');
-      tx.textContent = `${userLocation.label} (${userLocation.lat.toFixed(4)}, ${userLocation.lng.toFixed(4)})`;
+      tx.textContent = `${userLoc.label} (${userLoc.lat.toFixed(4)}, ${userLoc.lng.toFixed(4)})`;
       rb.style.display = '';
-      document.getElementById('mainSubtitle').textContent = `${userLocation.label} 기준 카카오 맛집 검색!`;
+      document.getElementById('headerSub').textContent = `${userLoc.label} 기준 1km 이내 맛집 랜덤 추천`;
     } else {
       st.classList.remove('set');
-      tx.textContent = '위치 미설정 (기본: 매봉역)';
+      tx.textContent = '위치 미설정 — 설정하면 더 정확해요';
       rb.style.display = 'none';
-      document.getElementById('mainSubtitle').textContent = '카카오맵 실시간 맛집 연동!';
     }
   }
 
-  function saveLocation(loc) {
-    userLocation = loc;
-    localStorage.setItem('userLocation', JSON.stringify(loc));
-    resetMapState();
-    updateLocationUI();
+  function saveLoc(loc) {
+    userLoc = loc;
+    localStorage.setItem('userLoc', JSON.stringify(loc));
+    if (kakaoMap) { kakaoMap = null; }
+    document.getElementById('mapCard').classList.remove('visible');
+    updateLocUI();
   }
 
   function getGPS() {
@@ -328,10 +333,10 @@
     btn.textContent = '📡 찾는 중...'; btn.disabled = true;
     navigator.geolocation.getCurrentPosition(
       pos => {
-        const label = prompt('이 위치의 이름을 입력해주세요', '우리 사무실') || '내 위치';
-        saveLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude, label });
+        const label = prompt('이 위치 이름을 입력해주세요', '우리 사무실') || '내 위치';
+        saveLoc({ lat: pos.coords.latitude, lng: pos.coords.longitude, label });
         btn.textContent = '🛰️ GPS 자동설정'; btn.disabled = false;
-        alert(`✅ "${label}"로 저장됐어요!\n메뉴를 뽑으면 이 위치 기준으로 맛집이 검색됩니다.`);
+        alert(`✅ "${label}"로 저장됐어요!`);
       },
       () => { alert('위치 권한을 허용해주세요.'); btn.textContent = '🛰️ GPS 자동설정'; btn.disabled = false; }
     );
@@ -339,273 +344,174 @@
 
   function toggleManual() { document.getElementById('manualForm').classList.toggle('open'); }
 
-  function saveManualLocation() {
+  function saveManual() {
     const label = document.getElementById('locLabel').value.trim() || '내 위치';
     const lat = parseFloat(document.getElementById('locLat').value);
     const lng = parseFloat(document.getElementById('locLng').value);
     if (isNaN(lat) || isNaN(lng)) { alert('위도와 경도를 입력해주세요!'); return; }
-    saveLocation({ lat, lng, label });
+    saveLoc({ lat, lng, label });
     document.getElementById('manualForm').classList.remove('open');
-    alert(`✅ "${label}"로 저장됐어요!\n메뉴를 뽑으면 이 위치 기준으로 맛집이 검색됩니다.`);
+    alert(`✅ "${label}"로 저장됐어요!`);
   }
 
-  function resetLocation() {
+  function resetLoc() {
     if (!confirm('위치를 초기화할까요?')) return;
-    userLocation = null;
-    localStorage.removeItem('userLocation');
-    resetMapState();
-    updateLocationUI();
-  }
-
-  /* ── 지도 & 검색 ── */
-  const RADIUS = 1000; // 1km 고정
-  let kakaoMap = null;
-  let markers = [];
-  let infowindow = null;
-  let currentMenu = null;
-
-  function resetMapState() {
-    markers.forEach(m => m.setMap(null));
-    markers = [];
-    if (kakaoMap) { kakaoMap = null; }
+    userLoc = null; localStorage.removeItem('userLoc');
+    if (kakaoMap) kakaoMap = null;
     document.getElementById('mapCard').classList.remove('visible');
+    updateLocUI();
   }
 
-  function spin() {
-    const all = getAllMenus();
-    if (!all.length) { alert('메뉴가 없어요!'); return; }
+  /* ── 카테고리 ── */
+  function selectCat(el, cat) {
+    document.querySelectorAll('.cat-tab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    selectedCat = cat;
+  }
+
+  /* ── 핵심: 식당 랜덤 뽑기 ── */
+  function pickRestaurant() {
+    if (spinning) return;
+    spinning = true;
 
     const btn = document.getElementById('spinBtn');
-    btn.disabled = true; btn.textContent = '🎰 뽑는 중...';
-    document.getElementById('box0').classList.remove('landed');
-    document.getElementById('box0').classList.add('spinning');
+    btn.disabled = true;
 
-    let count = 0;
-    const interval = setInterval(() => {
-      count++;
-      const r = all[Math.floor(Math.random()*all.length)];
-      document.getElementById('menu0').textContent = r;
-      document.getElementById('emoji0').textContent = EMOJIS[Math.floor(Math.random()*EMOJIS.length)];
-      if (count >= 22) {
-        clearInterval(interval);
-        const pick = all[Math.floor(Math.random()*all.length)];
-        document.getElementById('menu0').textContent = pick;
-        document.getElementById('emoji0').textContent = '🎉';
-        document.getElementById('box0').classList.remove('spinning');
-        document.getElementById('box0').classList.add('landed');
-        btn.disabled = false; btn.textContent = '🎰 다시 뽑기!';
-        currentMenu = pick;
-        showMapCard(pick);
-      }
-    }, 80);
-  }
+    // 룰렛 애니메이션 시작
+    document.getElementById('resultArea').classList.remove('landed');
+    document.getElementById('resultName').classList.add('spinning');
+    document.getElementById('resultCat').textContent = '';
+    document.getElementById('resultAddr').textContent = '';
 
-  function showMapCard(menu) {
+    let tick = 0;
+    const anim = setInterval(() => {
+      tick++;
+      document.getElementById('resultEmoji').textContent = SPIN_EMOJIS[tick % SPIN_EMOJIS.length];
+      document.getElementById('resultName').textContent = ['두근두근...','어디일까?','설레는 중!','잠깐만요~','거의 다 됐어요!'][tick % 5];
+      btn.textContent = ['🎰 오늘은...','🎰 여기...','🎰 다!!','🎰 오늘은...'][tick % 4];
+    }, 150);
+
+    // 카카오 검색
     const base = getBase();
-    const mapCard = document.getElementById('mapCard');
-
-    document.getElementById('mapTitle').textContent = `📍 "${menu}" 맛집 검색`;
-    document.getElementById('mapSubtitle').textContent = `${base.label} 기준 · 1km 이내`;
-    document.getElementById('restaurantList').innerHTML =
-      '<div class="map-loading"><div class="spinner"></div><br>카카오맵 검색 중...</div>';
-
-    // 1) 카드 먼저 보이게
-    mapCard.classList.add('visible');
-    mapCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
-
-    // 2) 브라우저가 레이아웃 계산할 시간 준 뒤 지도 초기화
-    setTimeout(() => initMap(menu, base), 300);
-  }
-
-  function initMap(menu, base) {
-    const container = document.getElementById('kakaoMap');
-    console.log('[지도] 초기화 시작:', base, '컨테이너 크기:', container.offsetWidth, 'x', container.offsetHeight);
-
-    if (typeof kakao === 'undefined') {
-      console.error('[지도] kakao 객체 없음 - SDK 로드 실패');
-      document.getElementById('restaurantList').innerHTML =
-        '<div class="map-loading">⚠️ 카카오 SDK 로드 실패<br><small>플랫폼 도메인 등록을 확인해주세요</small></div>';
-      return;
-    }
-
-    const center = new kakao.maps.LatLng(base.lat, base.lng);
-
-    if (!kakaoMap) {
-      kakaoMap = new kakao.maps.Map(container, { center, level: 5 });
-      console.log('[지도] 신규 생성 완료');
-    } else {
-      markers.forEach(m => m.setMap(null));
-      markers = [];
-      kakaoMap.setCenter(center);
-      kakaoMap.setLevel(5);
-      console.log('[지도] 기존 지도 재사용');
-    }
-    kakaoMap.relayout();
-    console.log('[지도] relayout 완료');
-
-    infowindow = new kakao.maps.InfoWindow({ zIndex: 1 });
-
-    // 내 위치 마커 (별 모양)
-    const starImg = new kakao.maps.MarkerImage(
-      'https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/markerStar.png',
-      new kakao.maps.Size(24, 35)
-    );
-    const myMarker = new kakao.maps.Marker({ position: center, map: kakaoMap, image: starImg, title: base.label });
-    markers.push(myMarker);
-
-    searchPlaces(menu, base);
-  }
-
-  function menuToCategory(name) {
-    for (const [cat, words] of Object.entries(CAT_KEYWORDS)) {
-      if (words.includes(name)) return cat;
-    }
-    return null;
-  }
-
-  function searchPlaces(menu, base) {
-    const cat = menuToCategory(menu);
-    const keyword = (cat ? CAT_SEARCH[cat] : menu) || menu;
-
-    markers.slice(1).forEach(m => m.setMap(null));
-    markers = markers.slice(0, 1);
-
+    const keyword = CAT_KEYWORDS[selectedCat];
     const ps = new kakao.maps.services.Places();
-    ps.keywordSearch(keyword, (data, status) => {
-      if (status !== kakao.maps.services.Status.OK || !data.length) {
-        document.getElementById('restaurantList').innerHTML =
-          '<div class="map-loading">1km 이내 검색 결과가 없어요 😢</div>';
-        return;
-      }
-      const results = data
-        .map(p => ({ ...p, dist: calcDist(base.lat, base.lng, parseFloat(p.y), parseFloat(p.x)) }))
-        .filter(p => p.dist * 1000 <= RADIUS)
-        .sort((a, b) => a.dist - b.dist)
-        .slice(0, 15);
 
-      if (!results.length) {
-        document.getElementById('restaurantList').innerHTML =
-          '<div class="map-loading">1km 이내 검색 결과가 없어요 😢<br><small>위치 설정을 확인해주세요</small></div>';
+    ps.keywordSearch(keyword, (data, status) => {
+      clearInterval(anim);
+      document.getElementById('resultName').classList.remove('spinning');
+
+      if (status !== kakao.maps.services.Status.OK || !data.length) {
+        showError('주변에 검색 결과가 없어요 😢\n위치 설정을 확인해주세요.');
         return;
       }
-      renderResults(results, base);
+
+      // 거리 필터 (1km)
+      const nearby = data.filter(p => {
+        const d = calcDist(base.lat, base.lng, parseFloat(p.y), parseFloat(p.x));
+        return d * 1000 <= 1000;
+      });
+
+      if (!nearby.length) {
+        showError('1km 이내에 해당 음식점이 없어요 😢\n카테고리를 바꾸거나 위치를 확인해주세요.');
+        return;
+      }
+
+      // 랜덤 1곳 선택
+      const picked = nearby[Math.floor(Math.random() * nearby.length)];
+      const dist = calcDist(base.lat, base.lng, parseFloat(picked.y), parseFloat(picked.x));
+
+      showResult(picked, dist);
     }, {
       location: new kakao.maps.LatLng(base.lat, base.lng),
-      radius: RADIUS,
+      radius: 1000,
       sort: kakao.maps.services.SortBy.DISTANCE
     });
   }
 
-  function renderResults(results) {
-    results.forEach((p, i) => {
-      const pos = new kakao.maps.LatLng(parseFloat(p.y), parseFloat(p.x));
-      const marker = new kakao.maps.Marker({ position: pos, map: kakaoMap, title: p.place_name });
-      markers.push(marker);
+  function showError(msg) {
+    document.getElementById('resultEmoji').textContent = '😢';
+    document.getElementById('resultName').textContent = '다시 시도해주세요';
+    document.getElementById('resultCat').textContent = msg;
+    document.getElementById('spinBtn').textContent = '🎰 오늘은 여기다!!';
+    document.getElementById('spinBtn').disabled = false;
+    spinning = false;
+  }
 
-      kakao.maps.event.addListener(marker, 'click', () => {
-        infowindow.setContent(`
-          <div style="padding:8px 10px;font-size:13px;font-weight:700;max-width:180px;line-height:1.6">
-            ${p.place_name}<br>
-            <span style="font-size:11px;color:#ff6a00;font-weight:500">${p.category_name.split('>').pop().trim()}</span><br>
-            <a href="${p.place_url}" target="_blank" style="font-size:11px;color:#3498db">카카오맵에서 보기 →</a>
-          </div>`);
-        infowindow.open(kakaoMap, marker);
-        kakaoMap.panTo(pos);
+  function showResult(p, dist) {
+    const cat = p.category_name.split('>').pop().trim();
+    const emoji = CAT_EMOJIS[selectedCat] || '🍽️';
+
+    // 결과 표시
+    document.getElementById('resultEmoji').textContent = '🎉';
+    document.getElementById('resultName').textContent = p.place_name;
+    document.getElementById('resultCat').textContent = cat;
+    document.getElementById('resultAddr').textContent = p.road_address_name || p.address_name;
+
+    const area = document.getElementById('resultArea');
+    area.classList.add('landed');
+
+    const btn = document.getElementById('spinBtn');
+    btn.textContent = '🎰 다른 곳도 볼게요!';
+    btn.disabled = false;
+    spinning = false;
+
+    // 지도 표시
+    showMap(p, dist, cat);
+  }
+
+  function showMap(p, dist, cat) {
+    const mapCard = document.getElementById('mapCard');
+    document.getElementById('mapRestName').textContent = p.place_name;
+    document.getElementById('mapRestCat').textContent = cat;
+    document.getElementById('mapDist').textContent = `📍 ${distLabel(dist)} 거리`;
+    mapCard.classList.add('visible');
+
+    setTimeout(() => {
+      const lat = parseFloat(p.y), lng = parseFloat(p.x);
+      const pos = new kakao.maps.LatLng(lat, lng);
+      const container = document.getElementById('kakaoMap');
+
+      if (!kakaoMap) {
+        kakaoMap = new kakao.maps.Map(container, { center: pos, level: 4 });
+      } else {
+        kakaoMap.setCenter(pos);
+        kakaoMap.setLevel(4);
+      }
+      kakaoMap.relayout();
+
+      if (currentMarker) currentMarker.setMap(null);
+      currentMarker = new kakao.maps.Marker({ position: pos, map: kakaoMap });
+
+      const info = new kakao.maps.InfoWindow({
+        content: `<div style="padding:8px 10px;font-size:13px;font-weight:800;white-space:nowrap">🎉 ${p.place_name}</div>`,
+        removable: false
       });
-    });
+      info.open(kakaoMap, currentMarker);
 
-    // 전체 마커 범위에 맞게 지도 조정
-    if (results.length > 0) {
-      const bounds = new kakao.maps.LatLngBounds();
-      markers.forEach(m => bounds.extend(m.getPosition()));
-      kakaoMap.setBounds(bounds);
-    }
+      document.getElementById('mapContent').innerHTML = `
+        <div class="restaurant-detail">
+          <div class="detail-name">${p.place_name}</div>
+          <div class="detail-cat">${cat} · ${distLabel(dist)}</div>
+          <div class="detail-addr">${p.road_address_name || p.address_name}</div>
+          <div class="detail-actions">
+            <a class="detail-btn kakao" href="${p.place_url}" target="_blank">🗺️ 카카오맵에서 보기</a>
+            <button class="detail-btn retry" onclick="pickRestaurant()">🔀 다른 곳!</button>
+          </div>
+        </div>`;
 
-    document.getElementById('restaurantList').innerHTML = results.map((p, i) => `
-      <div class="restaurant-item" onclick="focusMarker(${i + 1}, '${p.y}', '${p.x}')">
-        <div class="r-rank">${i + 1}</div>
-        <div class="r-info">
-          <div class="r-name">${p.place_name}</div>
-          <div class="r-cat">${p.category_name.split('>').pop().trim()}</div>
-          <div class="r-addr">${p.road_address_name || p.address_name}</div>
-          <a class="r-link" href="${p.place_url}" target="_blank" onclick="event.stopPropagation()">카카오맵에서 보기 →</a>
-        </div>
-        <div class="r-dist">${distLabel(p.dist)}</div>
-      </div>`).join('');
+      mapCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 300);
   }
 
-  function focusMarker(idx, lat, lng) {
-    const pos = new kakao.maps.LatLng(parseFloat(lat), parseFloat(lng));
-    kakaoMap.setLevel(3);
-    kakaoMap.panTo(pos);
-    if (markers[idx]) kakao.maps.event.trigger(markers[idx], 'click');
-  }
-
+  /* ── 유틸 ── */
   function calcDist(lat1, lng1, lat2, lng2) {
-    const R = 6371;
-    const dLat = (lat2-lat1)*Math.PI/180;
-    const dLng = (lng2-lng1)*Math.PI/180;
+    const R = 6371, dLat = (lat2-lat1)*Math.PI/180, dLng = (lng2-lng1)*Math.PI/180;
     const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;
     return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
   }
-
   function distLabel(d) { return d < 1 ? Math.round(d*1000)+'m' : d.toFixed(1)+'km'; }
 
-  /* ── 메뉴 관리 ── */
-  let currentCategory = "한식";
-  let customMenus = JSON.parse(localStorage.getItem('lunchCustom') || '[]');
-  let excluded    = JSON.parse(localStorage.getItem('lunchExcluded') || '[]');
-
-  function getAllMenus() {
-    let all = [];
-    Object.values(MENUS).forEach(list => list.forEach(m => all.push(m.name)));
-    customMenus.forEach(m => all.push(m));
-    return all.filter(m => !excluded.includes(m));
-  }
-
-  function renderCategoryTabs() {
-    const cats = [...Object.keys(MENUS), '직접추가'];
-    document.getElementById('categoryTabs').innerHTML = cats.map(c =>
-      `<button class="cat-tab ${c===currentCategory?'active':''}" onclick="selectCategory('${c}')">${c}</button>`
-    ).join('');
-  }
-
-  function selectCategory(cat) { currentCategory = cat; renderCategoryTabs(); renderMenuList(); }
-
-  function renderMenuList() {
-    const menus = currentCategory === '직접추가'
-      ? customMenus.map(n=>({name:n}))
-      : (MENUS[currentCategory] || []);
-    document.getElementById('menuList').innerHTML = menus.map(m =>
-      `<span class="menu-tag ${excluded.includes(m.name)?'excluded':''}">
-        ${m.name}
-        <span class="tag-toggle" onclick="toggleExclude('${m.name}')">${excluded.includes(m.name)?'✚':'✖'}</span>
-      </span>`
-    ).join('') || '<span style="color:#ccc;font-size:0.82rem">메뉴를 추가해보세요!</span>';
-    document.getElementById('menuCount').textContent = `뽑기 가능 메뉴: ${getAllMenus().length}개`;
-  }
-
-  function toggleExclude(name) {
-    excluded = excluded.includes(name) ? excluded.filter(e=>e!==name) : [...excluded, name];
-    localStorage.setItem('lunchExcluded', JSON.stringify(excluded));
-    renderMenuList();
-  }
-
-  function addMenu() {
-    const val = document.getElementById('newMenuInput').value.trim();
-    if (!val) return;
-    if (customMenus.includes(val)) { alert('이미 있어요!'); return; }
-    customMenus.push(val);
-    localStorage.setItem('lunchCustom', JSON.stringify(customMenus));
-    document.getElementById('newMenuInput').value = '';
-    currentCategory = '직접추가';
-    renderCategoryTabs(); renderMenuList();
-  }
-
-  /* ── 초기화 ── */
-  updateLocationUI();
-  renderCategoryTabs();
-  renderMenuList();
+  updateLocUI();
 </script>
 </body>
 </html>
