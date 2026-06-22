@@ -125,14 +125,11 @@
     .map-header p  { font-size: 0.78rem; color: #999; }
     #kakaoMap { width: 100%; height: 300px; }
 
-    /* 반경 슬라이더 */
+    /* 반경 고정 안내 */
     .radius-bar {
-      display: flex; align-items: center; gap: 10px;
-      padding: 10px 18px; background: #fafafa; border-bottom: 1px solid #f0f0f0;
-      font-size: 0.8rem; color: #666;
+      padding: 8px 18px; background: #fff8f3; border-bottom: 1px solid #ffe8d6;
+      font-size: 0.78rem; color: #c04000; font-weight: 600;
     }
-    .radius-bar input[type=range] { flex: 1; accent-color: #ff6a00; }
-    .radius-val { font-weight: 700; color: #ff6a00; min-width: 38px; }
 
     /* 식당 목록 */
     .restaurant-list { max-height: 280px; overflow-y: auto; }
@@ -248,11 +245,7 @@
       <h2 id="mapTitle">📍 주변 맛집</h2>
       <p id="mapSubtitle">카카오맵 실시간 검색</p>
     </div>
-    <div class="radius-bar">
-      <span>반경</span>
-      <input type="range" id="radiusSlider" min="300" max="2000" step="100" value="500" oninput="onRadiusChange(this.value)">
-      <span class="radius-val" id="radiusVal">500m</span>
-    </div>
+    <div class="radius-bar">📍 내 위치 기준 반경 1km 이내 맛집</div>
     <div id="kakaoMap"></div>
     <div class="restaurant-list" id="restaurantList">
       <div class="map-loading">
@@ -365,22 +358,17 @@
   }
 
   /* ── 지도 & 검색 ── */
+  const RADIUS = 1000; // 1km 고정
   let kakaoMap = null;
   let markers = [];
+  let infowindow = null;
   let currentMenu = null;
-  let currentRadius = 500;
 
   function resetMapState() {
-    if (kakaoMap) { kakaoMap = null; }
     markers.forEach(m => m.setMap(null));
     markers = [];
+    if (kakaoMap) { kakaoMap = null; }
     document.getElementById('mapCard').classList.remove('visible');
-  }
-
-  function onRadiusChange(val) {
-    currentRadius = parseInt(val);
-    document.getElementById('radiusVal').textContent = val >= 1000 ? (val/1000).toFixed(1)+'km' : val+'m';
-    if (currentMenu) searchPlaces(currentMenu);
   }
 
   function spin() {
@@ -413,42 +401,47 @@
   }
 
   function showMapCard(menu) {
-    const cat = menuToCategory(menu);
     const base = getBase();
     const mapCard = document.getElementById('mapCard');
-    mapCard.classList.add('visible');
+
     document.getElementById('mapTitle').textContent = `📍 "${menu}" 맛집 검색`;
-    document.getElementById('mapSubtitle').textContent = `${base.label} 기준 · 반경 조절 가능`;
+    document.getElementById('mapSubtitle').textContent = `${base.label} 기준 · 1km 이내`;
     document.getElementById('restaurantList').innerHTML =
       '<div class="map-loading"><div class="spinner"></div><br>카카오맵 검색 중...</div>';
 
-    // 지도 초기화
-    setTimeout(() => {
-      const container = document.getElementById('kakaoMap');
-      const options = { center: new kakao.maps.LatLng(base.lat, base.lng), level: 4 };
-      if (!kakaoMap) {
-        kakaoMap = new kakao.maps.Map(container, options);
-      } else {
-        kakaoMap.setCenter(new kakao.maps.LatLng(base.lat, base.lng));
-        kakaoMap.setLevel(4);
-      }
+    // 1) 카드 먼저 보이게
+    mapCard.classList.add('visible');
+    mapCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
-      // 내 위치 마커
-      const myMarkerImg = new kakao.maps.MarkerImage(
-        'https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/markerStar.png',
-        new kakao.maps.Size(24, 35)
-      );
-      const myMarker = new kakao.maps.Marker({
-        position: new kakao.maps.LatLng(base.lat, base.lng),
-        map: kakaoMap,
-        image: myMarkerImg,
-        title: base.label
-      });
-      markers.push(myMarker);
+    // 2) 브라우저가 레이아웃 계산할 시간 준 뒤 지도 초기화
+    setTimeout(() => initMap(menu, base), 300);
+  }
 
-      searchPlaces(menu);
-      mapCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 100);
+  function initMap(menu, base) {
+    const container = document.getElementById('kakaoMap');
+    const center = new kakao.maps.LatLng(base.lat, base.lng);
+
+    if (!kakaoMap) {
+      kakaoMap = new kakao.maps.Map(container, { center, level: 5 });
+    } else {
+      markers.forEach(m => m.setMap(null));
+      markers = [];
+      kakaoMap.setCenter(center);
+      kakaoMap.setLevel(5);
+    }
+    kakaoMap.relayout(); // 크기 재계산 핵심
+
+    infowindow = new kakao.maps.InfoWindow({ zIndex: 1 });
+
+    // 내 위치 마커 (별 모양)
+    const starImg = new kakao.maps.MarkerImage(
+      'https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/markerStar.png',
+      new kakao.maps.Size(24, 35)
+    );
+    const myMarker = new kakao.maps.Marker({ position: center, map: kakaoMap, image: starImg, title: base.label });
+    markers.push(myMarker);
+
+    searchPlaces(menu, base);
   }
 
   function menuToCategory(name) {
@@ -458,50 +451,40 @@
     return null;
   }
 
-  function searchPlaces(menu) {
+  function searchPlaces(menu, base) {
     const cat = menuToCategory(menu);
-    const keyword = cat ? CAT_SEARCH[cat] || cat : menu;
-    const base = getBase();
+    const keyword = (cat ? CAT_SEARCH[cat] : menu) || menu;
 
-    // 기존 식당 마커만 제거 (내 위치 마커는 유지)
     markers.slice(1).forEach(m => m.setMap(null));
     markers = markers.slice(0, 1);
 
     const ps = new kakao.maps.services.Places();
-    ps.keywordSearch(keyword + ' 맛집', (data, status) => {
-      if (status !== kakao.maps.services.Status.OK) {
+    ps.keywordSearch(keyword, (data, status) => {
+      if (status !== kakao.maps.services.Status.OK || !data.length) {
         document.getElementById('restaurantList').innerHTML =
-          '<div class="map-loading">검색 결과가 없어요 😢</div>';
+          '<div class="map-loading">1km 이내 검색 결과가 없어요 😢</div>';
         return;
       }
-
-      // 거리 계산 후 필터링
       const results = data
-        .map(p => ({
-          ...p,
-          dist: calcDist(base.lat, base.lng, parseFloat(p.y), parseFloat(p.x))
-        }))
-        .filter(p => p.dist * 1000 <= currentRadius)
-        .sort((a,b) => a.dist - b.dist)
+        .map(p => ({ ...p, dist: calcDist(base.lat, base.lng, parseFloat(p.y), parseFloat(p.x)) }))
+        .filter(p => p.dist * 1000 <= RADIUS)
+        .sort((a, b) => a.dist - b.dist)
         .slice(0, 15);
 
+      if (!results.length) {
+        document.getElementById('restaurantList').innerHTML =
+          '<div class="map-loading">1km 이내 검색 결과가 없어요 😢<br><small>위치 설정을 확인해주세요</small></div>';
+        return;
+      }
       renderResults(results, base);
     }, {
       location: new kakao.maps.LatLng(base.lat, base.lng),
-      radius: currentRadius,
+      radius: RADIUS,
       sort: kakao.maps.services.SortBy.DISTANCE
     });
   }
 
-  function renderResults(results, base) {
-    if (!results.length) {
-      document.getElementById('restaurantList').innerHTML =
-        `<div class="map-loading">반경 ${currentRadius}m 안에 결과가 없어요.<br>반경을 늘려보세요!</div>`;
-      return;
-    }
-
-    const infowindow = new kakao.maps.InfoWindow({ zIndex: 1 });
-
+  function renderResults(results) {
     results.forEach((p, i) => {
       const pos = new kakao.maps.LatLng(parseFloat(p.y), parseFloat(p.x));
       const marker = new kakao.maps.Marker({ position: pos, map: kakaoMap, title: p.place_name });
@@ -509,19 +492,26 @@
 
       kakao.maps.event.addListener(marker, 'click', () => {
         infowindow.setContent(`
-          <div style="padding:8px 10px;font-size:13px;font-weight:700;max-width:160px">
+          <div style="padding:8px 10px;font-size:13px;font-weight:700;max-width:180px;line-height:1.6">
             ${p.place_name}<br>
-            <span style="font-size:11px;color:#ff6a00;font-weight:400">${p.category_name}</span><br>
-            <a href="${p.place_url}" target="_blank" style="font-size:11px;color:#3498db">카카오맵에서 보기</a>
+            <span style="font-size:11px;color:#ff6a00;font-weight:500">${p.category_name.split('>').pop().trim()}</span><br>
+            <a href="${p.place_url}" target="_blank" style="font-size:11px;color:#3498db">카카오맵에서 보기 →</a>
           </div>`);
         infowindow.open(kakaoMap, marker);
         kakaoMap.panTo(pos);
       });
     });
 
+    // 전체 마커 범위에 맞게 지도 조정
+    if (results.length > 0) {
+      const bounds = new kakao.maps.LatLngBounds();
+      markers.forEach(m => bounds.extend(m.getPosition()));
+      kakaoMap.setBounds(bounds);
+    }
+
     document.getElementById('restaurantList').innerHTML = results.map((p, i) => `
-      <div class="restaurant-item" onclick="focusMarker(${i+1}, ${p.y}, ${p.x})">
-        <div class="r-rank">${i+1}</div>
+      <div class="restaurant-item" onclick="focusMarker(${i + 1}, '${p.y}', '${p.x}')">
+        <div class="r-rank">${i + 1}</div>
         <div class="r-info">
           <div class="r-name">${p.place_name}</div>
           <div class="r-cat">${p.category_name.split('>').pop().trim()}</div>
@@ -536,9 +526,7 @@
     const pos = new kakao.maps.LatLng(parseFloat(lat), parseFloat(lng));
     kakaoMap.setLevel(3);
     kakaoMap.panTo(pos);
-    if (markers[idx]) {
-      kakao.maps.event.trigger(markers[idx], 'click');
-    }
+    if (markers[idx]) kakao.maps.event.trigger(markers[idx], 'click');
   }
 
   function calcDist(lat1, lng1, lat2, lng2) {
