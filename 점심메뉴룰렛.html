@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>점심 메뉴 룰렛 🍽️</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+      background-color: #1a0a00;
+      background-image:
+        radial-gradient(ellipse at 20% 20%, rgba(255,90,0,0.18) 0%, transparent 55%),
+        radial-gradient(ellipse at 80% 80%, rgba(200,40,0,0.15) 0%, transparent 55%),
+        radial-gradient(ellipse at 60% 10%, rgba(255,180,0,0.10) 0%, transparent 40%);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 30px 20px;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    /* 배경 음식 이모지 떠다니기 */
+    .bg-food {
+      position: fixed;
+      font-size: 2rem;
+      opacity: 0.07;
+      pointer-events: none;
+      animation: float linear infinite;
+      z-index: 0;
+    }
+    @keyframes float {
+      0%   { transform: translateY(110vh) rotate(0deg); opacity: 0; }
+      10%  { opacity: 0.07; }
+      90%  { opacity: 0.07; }
+      100% { transform: translateY(-10vh) rotate(360deg); opacity: 0; }
+    }
+
+    body > *:not(.bg-food) { position: relative; z-index: 1; }
+
+    h1 {
+      color: #fff8f0;
+      font-size: 2rem;
+      margin-bottom: 6px;
+      text-shadow: 0 2px 16px rgba(255,100,0,0.5);
+    }
+    .subtitle {
+      color: rgba(255,210,160,0.85);
+      margin-bottom: 30px;
+      font-size: 0.95rem;
+    }
+
+    .card {
+      background: white;
+      border-radius: 24px;
+      padding: 28px;
+      width: 100%;
+      max-width: 480px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+      margin-bottom: 20px;
+    }
+
+
+    /* 결과 룰렛 */
+    .roulette-area {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+
+    .result-boxes {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+    }
+
+    .result-box {
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      border-radius: 18px;
+      padding: 18px 14px;
+      min-width: 130px;
+      flex: 1;
+      max-width: 200px;
+      box-shadow: 0 6px 20px rgba(240,147,251,0.35);
+      transition: transform 0.2s;
+    }
+    .result-box:nth-child(2) {
+      background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+      box-shadow: 0 6px 20px rgba(79,172,254,0.35);
+    }
+    .result-box:nth-child(3) {
+      background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+      box-shadow: 0 6px 20px rgba(67,233,123,0.35);
+    }
+
+    .result-box .person-label {
+      font-size: 0.75rem;
+      color: rgba(255,255,255,0.85);
+      margin-bottom: 6px;
+      font-weight: 600;
+    }
+    .result-box .menu-name {
+      font-size: 1.3rem;
+      font-weight: 800;
+      color: white;
+      text-shadow: 0 1px 4px rgba(0,0,0,0.1);
+      min-height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .result-box .menu-emoji {
+      font-size: 2rem;
+      margin-bottom: 4px;
+    }
+
+    .result-box.spinning .menu-name {
+      animation: spin-text 0.1s infinite;
+    }
+
+    @keyframes spin-text {
+      0% { opacity: 1; }
+      50% { opacity: 0.3; }
+      100% { opacity: 1; }
+    }
+
+    .result-box.landed {
+      animation: bounce 0.5s ease;
+    }
+    @keyframes bounce {
+      0% { transform: scale(1); }
+      40% { transform: scale(1.12); }
+      70% { transform: scale(0.95); }
+      100% { transform: scale(1); }
+    }
+
+    /* 버튼 */
+    .spin-btn {
+      width: 100%;
+      padding: 18px;
+      background: linear-gradient(135deg, #ff6a00 0%, #ee0979 100%);
+      color: white;
+      border: none;
+      border-radius: 16px;
+      font-size: 1.2rem;
+      font-weight: 800;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: inherit;
+      box-shadow: 0 6px 24px rgba(255,80,0,0.45);
+    }
+    .spin-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 32px rgba(255,80,0,0.6); }
+    .spin-btn:active { transform: translateY(0); }
+    .spin-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+    /* 메뉴 관리 */
+    .menu-card {
+      background: white;
+      border-radius: 24px;
+      padding: 28px;
+      width: 100%;
+      max-width: 480px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+    }
+
+    .menu-card h2 {
+      font-size: 1rem;
+      color: #444;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .category-tabs {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+    .cat-tab {
+      padding: 6px 14px;
+      border-radius: 20px;
+      border: none;
+      font-size: 0.82rem;
+      cursor: pointer;
+      font-family: inherit;
+      font-weight: 600;
+      transition: all 0.2s;
+      background: #f0f0f0;
+      color: #666;
+    }
+    .cat-tab.active { background: #ff6a00; color: white; }
+
+    .menu-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 16px;
+      min-height: 50px;
+    }
+
+    .menu-tag {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      background: #fff3ec;
+      border: 1.5px solid #ffd0b0;
+      border-radius: 20px;
+      padding: 6px 12px;
+      font-size: 0.88rem;
+      color: #c04000;
+      font-weight: 600;
+      cursor: default;
+      transition: all 0.2s;
+    }
+    .menu-tag.excluded {
+      background: #f5f5f5;
+      border-color: #ddd;
+      color: #999;
+      text-decoration: line-through;
+    }
+    .menu-tag .tag-toggle {
+      cursor: pointer;
+      font-size: 0.75rem;
+      opacity: 0.6;
+      transition: opacity 0.15s;
+    }
+    .menu-tag .tag-toggle:hover { opacity: 1; }
+
+    .add-menu-row {
+      display: flex;
+      gap: 8px;
+    }
+    .add-menu-input {
+      flex: 1;
+      padding: 10px 14px;
+      border: 1.5px solid #e0e0e0;
+      border-radius: 12px;
+      font-size: 0.9rem;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .add-menu-input:focus { border-color: #ff6a00; }
+    .add-btn {
+      padding: 10px 18px;
+      background: #ff6a00;
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 0.9rem;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+      transition: background 0.2s;
+    }
+    .add-btn:hover { background: #d95500; }
+
+    .menu-count {
+      font-size: 0.78rem;
+      color: #aaa;
+      margin-top: 8px;
+    }
+
+    .footer {
+      color: rgba(255,180,100,0.5);
+      font-size: 0.78rem;
+      margin-top: 16px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>🍽️ 점심 메뉴 룰렛</h1>
+  <p class="subtitle">오늘 뭐 먹지? 고민 끝!</p>
+
+  <!-- 떠다니는 음식 이모지 -->
+  <div class="bg-food" style="left:5%;animation-duration:14s;animation-delay:0s;font-size:2.5rem">🍜</div>
+  <div class="bg-food" style="left:18%;animation-duration:18s;animation-delay:3s">🍣</div>
+  <div class="bg-food" style="left:32%;animation-duration:12s;animation-delay:1s;font-size:1.6rem">🍕</div>
+  <div class="bg-food" style="left:50%;animation-duration:16s;animation-delay:5s;font-size:3rem">🥩</div>
+  <div class="bg-food" style="left:65%;animation-duration:20s;animation-delay:2s">🍱</div>
+  <div class="bg-food" style="left:78%;animation-duration:13s;animation-delay:7s;font-size:1.8rem">🌮</div>
+  <div class="bg-food" style="left:90%;animation-duration:17s;animation-delay:4s">🍔</div>
+  <div class="bg-food" style="left:42%;animation-duration:22s;animation-delay:9s;font-size:2.2rem">🥟</div>
+
+  <!-- 메인 카드 -->
+  <div class="card">
+    <div class="roulette-area">
+      <div class="result-boxes" id="resultBoxes">
+        <!-- JS로 생성 -->
+      </div>
+    </div>
+
+    <button class="spin-btn" id="spinBtn" onclick="spin()">
+      🎰 메뉴 뽑기!
+    </button>
+  </div>
+
+  <!-- 메뉴 관리 카드 -->
+  <div class="menu-card">
+    <h2>📋 메뉴 목록 관리</h2>
+
+    <div class="category-tabs" id="categoryTabs"></div>
+
+    <div class="menu-list" id="menuList"></div>
+    <div class="menu-count" id="menuCount"></div>
+
+    <div class="add-menu-row">
+      <input class="add-menu-input" id="newMenuInput" placeholder="메뉴 직접 추가..." maxlength="15" onkeydown="if(event.key==='Enter')addMenu()">
+      <button class="add-btn" onclick="addMenu()">추가</button>
+    </div>
+  </div>
+
+  <p class="footer">클릭해서 제외 / 다시 클릭하면 포함</p>
+
+<script>
+  const MENUS = {
+    "한식": [
+      {name:"김치찌개",emoji:"🍲"}, {name:"된장찌개",emoji:"🍲"}, {name:"순두부찌개",emoji:"🍲"},
+      {name:"비빔밥",emoji:"🥗"}, {name:"불고기",emoji:"🥩"}, {name:"삼겹살",emoji:"🥓"},
+      {name:"냉면",emoji:"🍜"}, {name:"국밥",emoji:"🍚"}, {name:"곱창",emoji:"🍢"},
+      {name:"쌈밥",emoji:"🥬"}, {name:"갈비탕",emoji:"🍲"}, {name:"설렁탕",emoji:"🍲"},
+      {name:"닭갈비",emoji:"🍗"}, {name:"제육볶음",emoji:"🍖"}, {name:"보쌈",emoji:"🥩"}
+    ],
+    "중식": [
+      {name:"짜장면",emoji:"🍜"}, {name:"짬뽕",emoji:"🍜"}, {name:"탕수육",emoji:"🍖"},
+      {name:"마라탕",emoji:"🌶️"}, {name:"양꼬치",emoji:"🍢"}, {name:"볶음밥",emoji:"🍚"},
+      {name:"훠궈",emoji:"🫕"}, {name:"딤섬",emoji:"🥟"}
+    ],
+    "일식": [
+      {name:"라멘",emoji:"🍜"}, {name:"초밥",emoji:"🍣"}, {name:"우동",emoji:"🍜"},
+      {name:"돈카츠",emoji:"🍱"}, {name:"규동",emoji:"🍚"}, {name:"오야코동",emoji:"🍱"},
+      {name:"텐동",emoji:"🍤"}, {name:"소바",emoji:"🍜"}, {name:"야키니쿠",emoji:"🥩"}
+    ],
+    "양식": [
+      {name:"파스타",emoji:"🍝"}, {name:"피자",emoji:"🍕"}, {name:"버거",emoji:"🍔"},
+      {name:"샌드위치",emoji:"🥪"}, {name:"스테이크",emoji:"🥩"}, {name:"샐러드",emoji:"🥗"},
+      {name:"리조또",emoji:"🍚"}, {name:"타코",emoji:"🌮"}
+    ],
+    "분식": [
+      {name:"떡볶이",emoji:"🍢"}, {name:"순대",emoji:"🌭"}, {name:"김밥",emoji:"🍙"},
+      {name:"라면",emoji:"🍜"}, {name:"튀김",emoji:"🍤"}, {name:"쫄면",emoji:"🍜"},
+      {name:"만두",emoji:"🥟"}, {name:"어묵",emoji:"🍢"}
+    ]
+  };
+
+  const EMOJIS = ["🎉","✨","🔥","💥","⭐","🌟","🎊","💫"];
+
+  let currentCategory = Object.keys(MENUS)[0];
+  let customMenus = JSON.parse(localStorage.getItem('lunchCustom') || '[]');
+  let excluded = JSON.parse(localStorage.getItem('lunchExcluded') || '[]');
+  let spinning = false;
+
+  function renderResultBoxes() {
+    const container = document.getElementById('resultBoxes');
+    container.innerHTML = `
+      <div class="result-box" id="box0">
+        <div class="menu-emoji" id="emoji0">🎯</div>
+        <div class="person-label">오늘의 메뉴</div>
+        <div class="menu-name" id="menu0">?</div>
+      </div>`;
+  }
+
+  function getAllMenus() {
+    let all = [];
+    Object.values(MENUS).forEach(list => list.forEach(m => all.push(m.name)));
+    customMenus.forEach(m => all.push(m));
+    return all.filter(m => !excluded.includes(m));
+  }
+
+  function spin() {
+    if(spinning) return;
+    const all = getAllMenus();
+    if(all.length < 1) { alert('메뉴가 없어요! 제외 해제하거나 메뉴를 추가해주세요.'); return; }
+
+    spinning = true;
+    const btn = document.getElementById('spinBtn');
+    btn.disabled = true;
+    btn.textContent = '🎰 뽑는 중...';
+
+    document.getElementById('box0').classList.remove('landed');
+    document.getElementById('box0').classList.add('spinning');
+
+    let count = 0;
+    const maxCount = 20;
+    const interval = setInterval(() => {
+      count++;
+      const r = all[Math.floor(Math.random()*all.length)];
+      document.getElementById('menu0').textContent = r;
+      document.getElementById('emoji0').textContent = EMOJIS[Math.floor(Math.random()*EMOJIS.length)];
+
+      if(count >= maxCount) {
+        clearInterval(interval);
+        const pick = all[Math.floor(Math.random()*all.length)];
+        document.getElementById('menu0').textContent = pick;
+        document.getElementById('emoji0').textContent = '🎉';
+        const box = document.getElementById('box0');
+        box.classList.remove('spinning');
+        box.classList.add('landed');
+        spinning = false;
+        btn.disabled = false;
+        btn.textContent = '🎰 다시 뽑기!';
+      }
+    }, 80);
+  }
+
+  // 카테고리 탭
+  function renderCategoryTabs() {
+    const tabs = document.getElementById('categoryTabs');
+    const cats = [...Object.keys(MENUS), '직접추가'];
+    tabs.innerHTML = cats.map(c =>
+      `<button class="cat-tab ${c===currentCategory?'active':''}" onclick="selectCategory('${c}')">${c}</button>`
+    ).join('');
+  }
+
+  function selectCategory(cat) {
+    currentCategory = cat;
+    renderCategoryTabs();
+    renderMenuList();
+  }
+
+  function renderMenuList() {
+    const list = document.getElementById('menuList');
+    let menus = currentCategory === '직접추가'
+      ? customMenus.map(n=>({name:n,emoji:'🍴'}))
+      : (MENUS[currentCategory] || []);
+
+    list.innerHTML = menus.map(m =>
+      `<span class="menu-tag ${excluded.includes(m.name)?'excluded':''}" title="클릭하면 제외/포함">
+        ${m.emoji} ${m.name}
+        <span class="tag-toggle" onclick="toggleExclude('${m.name}')">${excluded.includes(m.name)?'✚':'✖'}</span>
+      </span>`
+    ).join('');
+
+    if(menus.length === 0) list.innerHTML = '<span style="color:#ccc;font-size:0.85rem">메뉴를 추가해보세요!</span>';
+
+    const all = getAllMenus();
+    document.getElementById('menuCount').textContent = `현재 뽑기 가능한 메뉴: ${all.length}개`;
+  }
+
+  function toggleExclude(name) {
+    if(excluded.includes(name)) excluded = excluded.filter(e=>e!==name);
+    else excluded.push(name);
+    localStorage.setItem('lunchExcluded', JSON.stringify(excluded));
+    renderMenuList();
+  }
+
+  function addMenu() {
+    const input = document.getElementById('newMenuInput');
+    const val = input.value.trim();
+    if(!val) return;
+    if(customMenus.includes(val)) { alert('이미 있는 메뉴예요!'); return; }
+    customMenus.push(val);
+    localStorage.setItem('lunchCustom', JSON.stringify(customMenus));
+    input.value = '';
+    currentCategory = '직접추가';
+    renderCategoryTabs();
+    renderMenuList();
+  }
+
+  // 초기화
+  renderResultBoxes();
+  renderCategoryTabs();
+  renderMenuList();
+</script>
+</body>
+</html>
