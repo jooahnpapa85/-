@@ -25,7 +25,6 @@
       overflow-x: hidden;
     }
 
-    /* 배경 이모지 */
     .bg-food {
       position: fixed; font-size: 2rem; opacity: 0.06;
       pointer-events: none; animation: float linear infinite; z-index: 0;
@@ -37,18 +36,15 @@
     }
     body > *:not(.bg-food) { position: relative; z-index: 1; }
 
-    /* 헤더 */
     .header { text-align: center; margin-bottom: 24px; }
     .header h1 { color: #fff8f0; font-size: 1.9rem; text-shadow: 0 2px 16px rgba(255,100,0,0.5); margin-bottom: 4px; }
     .header p  { color: rgba(255,210,160,0.75); font-size: 0.88rem; }
 
-    /* 공통 카드 */
     .card {
       background: white; border-radius: 22px; width: 100%; max-width: 500px;
       box-shadow: 0 16px 48px rgba(0,0,0,0.3); margin-bottom: 16px;
     }
 
-    /* 위치 설정 카드 */
     .loc-card { padding: 18px; }
     .loc-card-title { font-size: 0.82rem; color: #aaa; font-weight: 600; margin-bottom: 10px; letter-spacing: 0.04em; }
     .loc-status {
@@ -86,10 +82,8 @@
       border-radius: 10px; font-size: 0.84rem; font-weight: 700; cursor: pointer; font-family: inherit;
     }
 
-    /* 메인 룰렛 카드 */
     .main-card { padding: 24px 18px; }
 
-    /* 카테고리 탭 */
     .cat-label { font-size: 0.78rem; color: #bbb; font-weight: 600; margin-bottom: 10px; letter-spacing: 0.04em; }
     .cat-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 22px; }
     .cat-tab {
@@ -100,7 +94,6 @@
     .cat-tab:hover { border-color: #ffb380; color: #ff6a00; }
     .cat-tab.active { background: #ff6a00; color: white; border-color: #ff6a00; box-shadow: 0 3px 12px rgba(255,106,0,0.35); }
 
-    /* 결과 표시 영역 */
     .result-area {
       background: linear-gradient(135deg, #1a0a00 0%, #3d1500 100%);
       border-radius: 18px; padding: 28px 20px; text-align: center;
@@ -114,7 +107,6 @@
     }
 
     .result-emoji { font-size: 3rem; margin-bottom: 8px; transition: all 0.1s; }
-
     .result-label { font-size: 0.72rem; color: rgba(255,180,100,0.6); font-weight: 600; letter-spacing: 0.08em; margin-bottom: 6px; }
 
     .result-name {
@@ -126,17 +118,10 @@
     .result-name.spinning { animation: flicker 0.08s infinite; }
     @keyframes flicker { 0%{opacity:1} 50%{opacity:0.4} 100%{opacity:1} }
 
-    .result-category {
-      font-size: 0.78rem; color: rgba(255,180,100,0.7); margin-top: 6px;
-      font-weight: 600;
-    }
-    .result-addr {
-      font-size: 0.75rem; color: rgba(255,255,255,0.4); margin-top: 4px;
-    }
+    .result-category { font-size: 0.78rem; color: rgba(255,180,100,0.7); margin-top: 6px; font-weight: 600; }
+    .result-addr    { font-size: 0.75rem; color: rgba(255,255,255,0.4); margin-top: 4px; }
 
-    .result-area.landed {
-      animation: pop 0.5s ease;
-    }
+    .result-area.landed { animation: pop 0.5s ease; }
     @keyframes pop {
       0%  { transform: scale(1); }
       35% { transform: scale(1.04); }
@@ -144,7 +129,6 @@
       100%{ transform: scale(1); }
     }
 
-    /* 메인 버튼 */
     .spin-btn {
       width: 100%;
       padding: 20px;
@@ -158,7 +142,6 @@
     .spin-btn:active { transform: translateY(0); }
     .spin-btn:disabled { opacity: 0.55; cursor: not-allowed; transform: none; box-shadow: none; }
 
-    /* 지도 카드 */
     .map-card { display: none; overflow: hidden; }
     .map-card.visible { display: block; }
 
@@ -174,11 +157,7 @@
 
     #kakaoMap { width: 100%; height: 280px; }
 
-    /* 식당 상세 */
-    .restaurant-detail {
-      padding: 16px 18px;
-      border-top: 1px solid #f5f5f5;
-    }
+    .restaurant-detail { padding: 16px 18px; border-top: 1px solid #f5f5f5; }
     .detail-name { font-size: 1.1rem; font-weight: 800; color: #222; margin-bottom: 4px; }
     .detail-cat  { font-size: 0.78rem; color: #ff6a00; font-weight: 600; margin-bottom: 6px; }
     .detail-addr { font-size: 0.8rem; color: #888; margin-bottom: 12px; line-height: 1.5; }
@@ -193,7 +172,6 @@
     .detail-btn.retry { background: #f5f5f5; color: #555; }
     .detail-btn.retry:hover { background: #ebebeb; }
 
-    /* 로딩 */
     .map-loading { padding: 28px; text-align: center; color: #ccc; font-size: 0.85rem; }
     .spinner {
       display: inline-block; width: 22px; height: 22px;
@@ -215,7 +193,7 @@
 
   <div class="header">
     <h1>🍽️ 오늘은 여기다!!</h1>
-    <p id="headerSub">내 위치 기준 1km 이내 맛집 랜덤 추천</p>
+    <p id="headerSub">내 위치 기준 500m 이내 맛집 랜덤 추천</p>
   </div>
 
   <!-- 위치 카드 -->
@@ -278,11 +256,11 @@
     </div>
   </div>
 
-  <p class="footer">카카오맵 실시간 데이터 · 반경 1km 이내 · 매번 다른 곳 추천</p>
+  <p class="footer">카카오맵 실시간 데이터 · 반경 500m 이내 · 매번 다른 곳 추천</p>
 
 <script>
-  /* ── 카테고리 설정 ── */
-  // 각 카테고리별 검색 키워드 목록 (여러 개를 병렬 검색해서 결과 합산)
+  const RADIUS = 500; // 반경 500m
+
   const CAT_KEYWORDS = {
     '전체': ['한식', '중식', '일식', '양식', '분식'],
     '한식': ['한식', '순대국밥', '삼겹살', '갈비', '설렁탕', '국밥', '찌개', '삼계탕'],
@@ -298,7 +276,6 @@
   let currentMarker = null;
   let spinning = false;
 
-  /* ── 위치 ── */
   const DEFAULT = { lat: 37.4849, lng: 127.0338, label: '매봉역' };
   let userLoc = JSON.parse(localStorage.getItem('userLoc') || 'null');
 
@@ -310,9 +287,9 @@
     const rb = document.getElementById('resetBtn');
     if (userLoc) {
       st.classList.add('set');
-      tx.textContent = `${userLoc.label} (${userLoc.lat.toFixed(4)}, ${userLoc.lng.toFixed(4)})`;
+      tx.textContent = userLoc.label + ' (' + userLoc.lat.toFixed(4) + ', ' + userLoc.lng.toFixed(4) + ')';
       rb.style.display = '';
-      document.getElementById('headerSub').textContent = `${userLoc.label} 기준 1km 이내 맛집 랜덤 추천`;
+      document.getElementById('headerSub').textContent = userLoc.label + ' 기준 500m 이내 맛집 랜덤 추천';
     } else {
       st.classList.remove('set');
       tx.textContent = '위치 미설정 — 설정하면 더 정확해요';
@@ -330,29 +307,29 @@
 
   function getGPS() {
     if (!navigator.geolocation) { alert('GPS를 지원하지 않아요.'); return; }
-    const btn = document.querySelector('.loc-btn.primary');
+    var btn = document.querySelector('.loc-btn.primary');
     btn.textContent = '📡 찾는 중...'; btn.disabled = true;
     navigator.geolocation.getCurrentPosition(
-      pos => {
-        const label = prompt('이 위치 이름을 입력해주세요', '우리 사무실') || '내 위치';
-        saveLoc({ lat: pos.coords.latitude, lng: pos.coords.longitude, label });
+      function(pos) {
+        var label = prompt('이 위치 이름을 입력해주세요', '우리 사무실') || '내 위치';
+        saveLoc({ lat: pos.coords.latitude, lng: pos.coords.longitude, label: label });
         btn.textContent = '🛰️ GPS 자동설정'; btn.disabled = false;
-        alert(`✅ "${label}"로 저장됐어요!`);
+        alert('✅ "' + label + '"로 저장됐어요!');
       },
-      () => { alert('위치 권한을 허용해주세요.'); btn.textContent = '🛰️ GPS 자동설정'; btn.disabled = false; }
+      function() { alert('위치 권한을 허용해주세요.'); btn.textContent = '🛰️ GPS 자동설정'; btn.disabled = false; }
     );
   }
 
   function toggleManual() { document.getElementById('manualForm').classList.toggle('open'); }
 
   function saveManual() {
-    const label = document.getElementById('locLabel').value.trim() || '내 위치';
-    const lat = parseFloat(document.getElementById('locLat').value);
-    const lng = parseFloat(document.getElementById('locLng').value);
+    var label = document.getElementById('locLabel').value.trim() || '내 위치';
+    var lat = parseFloat(document.getElementById('locLat').value);
+    var lng = parseFloat(document.getElementById('locLng').value);
     if (isNaN(lat) || isNaN(lng)) { alert('위도와 경도를 입력해주세요!'); return; }
-    saveLoc({ lat, lng, label });
+    saveLoc({ lat: lat, lng: lng, label: label });
     document.getElementById('manualForm').classList.remove('open');
-    alert(`✅ "${label}"로 저장됐어요!`);
+    alert('✅ "' + label + '"로 저장됐어요!');
   }
 
   function resetLoc() {
@@ -363,77 +340,68 @@
     updateLocUI();
   }
 
-  /* ── 카테고리 ── */
   function selectCat(el, cat) {
-    document.querySelectorAll('.cat-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.cat-tab').forEach(function(t) { t.classList.remove('active'); });
     el.classList.add('active');
     selectedCat = cat;
   }
 
-  /* ── 핵심: 식당 랜덤 뽑기 ── */
   function pickRestaurant() {
     if (spinning) return;
     spinning = true;
 
-    const btn = document.getElementById('spinBtn');
+    var btn = document.getElementById('spinBtn');
     btn.disabled = true;
 
-    // 룰렛 애니메이션 시작
     document.getElementById('resultArea').classList.remove('landed');
     document.getElementById('resultName').classList.add('spinning');
     document.getElementById('resultCat').textContent = '';
     document.getElementById('resultAddr').textContent = '';
 
-    let tick = 0;
-    const anim = setInterval(() => {
+    var tick = 0;
+    var anim = setInterval(function() {
       tick++;
       document.getElementById('resultEmoji').textContent = SPIN_EMOJIS[tick % SPIN_EMOJIS.length];
       document.getElementById('resultName').textContent = ['두근두근...','어디일까?','설레는 중!','잠깐만요~','거의 다 됐어요!'][tick % 5];
       btn.textContent = ['🎰 오늘은...','🎰 여기...','🎰 다!!','🎰 오늘은...'][tick % 4];
     }, 150);
 
-    // 카카오 검색 — 카테고리별 키워드 여러 개를 병렬 검색 후 합산
-    const base = getBase();
-    const keywords = CAT_KEYWORDS[selectedCat];
-    const ps = new kakao.maps.services.Places();
-    const opts = {
+    var base = getBase();
+    var keywords = CAT_KEYWORDS[selectedCat];
+    var ps = new kakao.maps.services.Places();
+    var opts = {
       location: new kakao.maps.LatLng(base.lat, base.lng),
-      radius: 1000,
+      radius: RADIUS,
       sort: kakao.maps.services.SortBy.DISTANCE
     };
 
-    // 키워드 하나씩 검색하는 Promise 래퍼
     function searchOne(kw) {
-      return new Promise(resolve => {
-        ps.keywordSearch(kw, (data, status) => {
+      return new Promise(function(resolve) {
+        ps.keywordSearch(kw, function(data, status) {
           resolve(status === kakao.maps.services.Status.OK ? data : []);
         }, opts);
       });
     }
 
-    // 모든 키워드 검색 완료 후 처리
-    Promise.all(keywords.map(kw => searchOne(kw))).then(results => {
+    Promise.all(keywords.map(function(kw) { return searchOne(kw); })).then(function(results) {
       clearInterval(anim);
       document.getElementById('resultName').classList.remove('spinning');
 
-      // 중복 제거 (id 기준) 후 1km 이내 필터
-      const seen = new Set();
-      const nearby = results.flat().filter(p => {
+      var seen = new Set();
+      var nearby = results.reduce(function(acc, arr) { return acc.concat(arr); }, []).filter(function(p) {
         if (seen.has(p.id)) return false;
         seen.add(p.id);
-        const d = calcDist(base.lat, base.lng, parseFloat(p.y), parseFloat(p.x));
-        return d * 1000 <= 1000;
+        var d = calcDist(base.lat, base.lng, parseFloat(p.y), parseFloat(p.x));
+        return d * 1000 <= RADIUS;
       });
 
       if (!nearby.length) {
-        showError('1km 이내에 해당 음식점이 없어요 😢\n카테고리를 바꾸거나 위치를 확인해주세요.');
+        showError('500m 이내에 해당 음식점이 없어요 😢\n카테고리를 바꾸거나 위치를 확인해주세요.');
         return;
       }
 
-      // 랜덤 1곳 선택
-      const picked = nearby[Math.floor(Math.random() * nearby.length)];
-      const dist = calcDist(base.lat, base.lng, parseFloat(picked.y), parseFloat(picked.x));
-
+      var picked = nearby[Math.floor(Math.random() * nearby.length)];
+      var dist = calcDist(base.lat, base.lng, parseFloat(picked.y), parseFloat(picked.x));
       showResult(picked, dist);
     });
   }
@@ -448,78 +416,78 @@
   }
 
   function showResult(p, dist) {
-    const cat = p.category_name.split('>').pop().trim();
-    const emoji = CAT_EMOJIS[selectedCat] || '🍽️';
+    var cat = p.category_name.split('>').pop().trim();
 
-    // 결과 표시
     document.getElementById('resultEmoji').textContent = '🎉';
     document.getElementById('resultName').textContent = p.place_name;
     document.getElementById('resultCat').textContent = cat;
     document.getElementById('resultAddr').textContent = p.road_address_name || p.address_name;
 
-    const area = document.getElementById('resultArea');
-    area.classList.add('landed');
+    document.getElementById('resultArea').classList.add('landed');
 
-    const btn = document.getElementById('spinBtn');
+    var btn = document.getElementById('spinBtn');
     btn.textContent = '🎰 다른 곳도 볼게요!';
     btn.disabled = false;
     spinning = false;
 
-    // 지도 표시
     showMap(p, dist, cat);
   }
 
   function showMap(p, dist, cat) {
-    const mapCard = document.getElementById('mapCard');
+    var mapCard = document.getElementById('mapCard');
     document.getElementById('mapRestName').textContent = p.place_name;
     document.getElementById('mapRestCat').textContent = cat;
-    document.getElementById('mapDist').textContent = `📍 ${distLabel(dist)} 거리`;
+    document.getElementById('mapDist').textContent = '📍 ' + distLabel(dist) + ' 거리';
     mapCard.classList.add('visible');
 
-    setTimeout(() => {
-      const lat = parseFloat(p.y), lng = parseFloat(p.x);
-      const pos = new kakao.maps.LatLng(lat, lng);
-      const container = document.getElementById('kakaoMap');
+    setTimeout(function() {
+      var lat = parseFloat(p.y), lng = parseFloat(p.x);
+      var pos = new kakao.maps.LatLng(lat, lng);
+      var container = document.getElementById('kakaoMap');
 
       if (!kakaoMap) {
-        kakaoMap = new kakao.maps.Map(container, { center: pos, level: 4 });
+        kakaoMap = new kakao.maps.Map(container, { center: pos, level: 3 });
       } else {
         kakaoMap.setCenter(pos);
-        kakaoMap.setLevel(4);
+        kakaoMap.setLevel(3);
       }
       kakaoMap.relayout();
 
       if (currentMarker) currentMarker.setMap(null);
       currentMarker = new kakao.maps.Marker({ position: pos, map: kakaoMap });
 
-      const info = new kakao.maps.InfoWindow({
-        content: `<div style="padding:8px 10px;font-size:13px;font-weight:800;white-space:nowrap">🎉 ${p.place_name}</div>`,
+      var info = new kakao.maps.InfoWindow({
+        content: '<div style="padding:8px 10px;font-size:13px;font-weight:800;white-space:nowrap">🎉 ' + p.place_name + '</div>',
         removable: false
       });
       info.open(kakaoMap, currentMarker);
 
-      document.getElementById('mapContent').innerHTML = `
-        <div class="restaurant-detail">
-          <div class="detail-name">${p.place_name}</div>
-          <div class="detail-cat">${cat} · ${distLabel(dist)}</div>
-          <div class="detail-addr">${p.road_address_name || p.address_name}</div>
-          <div class="detail-actions">
-            <a class="detail-btn kakao" href="${p.place_url}" target="_blank">🗺️ 카카오맵에서 보기</a>
-            <button class="detail-btn retry" onclick="pickRestaurant()">🔀 다른 곳!</button>
-          </div>
-        </div>`;
+      document.getElementById('mapContent').innerHTML =
+        '<div class="restaurant-detail">' +
+          '<div class="detail-name">' + p.place_name + '</div>' +
+          '<div class="detail-cat">' + cat + ' · ' + distLabel(dist) + '</div>' +
+          '<div class="detail-addr">' + (p.road_address_name || p.address_name) + '</div>' +
+          '<div class="detail-actions">' +
+            '<a class="detail-btn kakao" href="' + p.place_url + '" target="_blank">🗺️ 카카오맵에서 보기</a>' +
+            '<button class="detail-btn retry" onclick="pickRestaurant()">🔀 다른 곳!</button>' +
+          '</div>' +
+        '</div>';
 
       mapCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }, 300);
   }
 
-  /* ── 유틸 ── */
   function calcDist(lat1, lng1, lat2, lng2) {
-    const R = 6371, dLat = (lat2-lat1)*Math.PI/180, dLng = (lng2-lng1)*Math.PI/180;
-    const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;
-    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    var R = 6371;
+    var dLat = (lat2 - lat1) * Math.PI / 180;
+    var dLng = (lng2 - lng1) * Math.PI / 180;
+    var a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+            Math.sin(dLng/2) * Math.sin(dLng/2);
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   }
-  function distLabel(d) { return d < 1 ? Math.round(d*1000)+'m' : d.toFixed(1)+'km'; }
+
+  function distLabel(d) { return d < 1 ? Math.round(d * 1000) + 'm' : d.toFixed(1) + 'km'; }
 
   updateLocUI();
 </script>
