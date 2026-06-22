@@ -419,17 +419,29 @@
 
   function initMap(menu, base) {
     const container = document.getElementById('kakaoMap');
+    console.log('[지도] 초기화 시작:', base, '컨테이너 크기:', container.offsetWidth, 'x', container.offsetHeight);
+
+    if (typeof kakao === 'undefined') {
+      console.error('[지도] kakao 객체 없음 - SDK 로드 실패');
+      document.getElementById('restaurantList').innerHTML =
+        '<div class="map-loading">⚠️ 카카오 SDK 로드 실패<br><small>플랫폼 도메인 등록을 확인해주세요</small></div>';
+      return;
+    }
+
     const center = new kakao.maps.LatLng(base.lat, base.lng);
 
     if (!kakaoMap) {
       kakaoMap = new kakao.maps.Map(container, { center, level: 5 });
+      console.log('[지도] 신규 생성 완료');
     } else {
       markers.forEach(m => m.setMap(null));
       markers = [];
       kakaoMap.setCenter(center);
       kakaoMap.setLevel(5);
+      console.log('[지도] 기존 지도 재사용');
     }
-    kakaoMap.relayout(); // 크기 재계산 핵심
+    kakaoMap.relayout();
+    console.log('[지도] relayout 완료');
 
     infowindow = new kakao.maps.InfoWindow({ zIndex: 1 });
 
