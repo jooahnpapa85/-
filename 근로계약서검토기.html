@@ -306,14 +306,18 @@ async function run(){
 async function doFile(f,key){
   const ext=f.name.split('.').pop().toLowerCase();
   step('파일 읽는 중...');
-  if(ext==='pdf'){const t=await pdfText(f);step('AI 분석 중...');return call(key,t,'text');}
-  if(['jpg','jpeg','png','webp'].includes(ext)){const b=await toB64(f);step('이미지 인식 중...');return call(key,b,f.type||'image/jpeg');}
+  if(ext==='pdf'){
+    const r=await pdfToContent(f);
+    if(r.type==='text'){step('AI 분석 중...');return call(key,r.data,'text');}
+    else{step('스캔 PDF 이미지 분석 중...');return callImages(key,r.data);}
+  }
+  if(['jpg','jpeg','png','webp'].includes(ext)){const b=await toB64(f);step('이미지 인식 중...');return callImages(key,[b]);}
   if(ext==='txt'){const t=await toText(f);step('AI 분석 중...');return call(key,t,'text');}
   throw new Error('지원하지 않는 파일 형식입니다. PDF, JPG/PNG, TXT 파일을 사용하세요.');
 }
 async function doText(t,key){step('AI 분석 중...');return call(key,t,'text');}
 
-async function pdfText(f){
+async function pdfToContent(f){
   return new Promise((res,rej)=>{
     const r=new FileReader();
     r.onload=async function(e){
@@ -326,8 +330,21 @@ async function pdfText(f){
           const c=await pg.getTextContent();
           t+=c.items.map(s=>s.str).join(' ')+'\n';
         }
-        if(!t.trim())rej(new Error('PDF 텍스트 추출 실패. 이미지 PDF는 JPG로 변환 후 업로드하세요.'));
-        else res(t);
+        if(t.trim().length>50){res({type:'text',data:t});return;}
+        // 스캔 PDF → 이미지로 변환
+        step('스캔 PDF 감지 → 이미지 변환 중...');
+        const imgs=[];
+        const maxPg=Math.min(pdf.numPages,8);
+        for(let i=1;i<=maxPg;i++){
+          step('이미지 변환 중... ('+i+'/'+maxPg+' 페이지)');
+          const pg=await pdf.getPage(i);
+          const vp=pg.getViewport({scale:1.8});
+          const cv=document.createElement('canvas');
+          cv.width=vp.width;cv.height=vp.height;
+          await pg.render({canvasContext:cv.getContext('2d'),viewport:vp}).promise;
+          imgs.push(cv.toDataURL('image/jpeg',0.88).split(',')[1]);
+        }
+        res({type:'images',data:imgs});
       }catch(e){rej(e);}
     };
     r.readAsArrayBuffer(f);
@@ -335,6 +352,25 @@ async function pdfText(f){
 }
 function toB64(f){return new Promise((res,rej)=>{const r=new FileReader();r.onload=e=>res(e.target.result.split(',')[1]);r.onerror=rej;r.readAsDataURL(f);});}
 function toText(f){return new Promise((res,rej)=>{const r=new FileReader();r.onload=e=>res(e.target.result);r.onerror=rej;r.readAsText(f,'UTF-8');});}
+
+async function callImages(key,imgs){
+  const parts=[];
+  imgs.forEach(function(img){parts.push({inline_data:{mime_type:'image/jpeg',data:img}});});
+  parts.push({text:'이 근로계약서 이미지('+imgs.length+'페이지)를 전체 분석해주세요.'});
+  const r=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key='+encodeURIComponent(key),{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      system_instruction:{parts:[{text:SYS}]},
+      contents:[{parts:parts}],
+      generationConfig:{maxOutputTokens:4096,temperature:0.1}
+    })
+  });
+  if(!r.ok){let m='API 오류 ('+r.status+')';try{const e=await r.json();m=e.error?.message||m;}catch(_){}throw new Error(m);}
+  const d=await r.json();
+  let txt=(d.candidates[0].content.parts[0].text||'').trim().replace(/^```json\s*/i,'').replace(/^```\s*/i,'').replace(/\s*```$/i,'');
+  return JSON.parse(txt);
+}
 
 async function call(key,content,ct){
   const parts=ct==='text'
